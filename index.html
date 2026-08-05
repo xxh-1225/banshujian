@@ -1,0 +1,2051 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>班主任工作台 v3</title>
+<!-- Chart.js: bootcdn 国内镜像优先，jsdelivr 备用 -->
+<script>var _chartReady=false;</script>
+<script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.0/chart.umd.min.js" onload="_chartReady=true" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'">
+</script>
+<style>
+:root {
+  --primary:#1a73e8; --primary-light:#e8f0fe; --primary-dark:#1557b0;
+  --success:#34a853; --warning:#f9ab00; --danger:#ea4335;
+  --bg:#f5f7fa; --card:#ffffff; --text:#202124; --text-secondary:#5f6368;
+  --border:#dadce0; --sidebar-w:220px; --sidebar-bg:#1e293b;
+  --sidebar-text:#cbd5e1; --sidebar-active:#3b82f6; --sidebar-hover:#334155;
+  --shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md:0 4px 6px rgba(0,0,0,0.07),0 2px 4px rgba(0,0,0,0.06);
+  --radius:10px; --font-size:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{font-size:var(--font-size);}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;}
+.app-container{display:flex;min-height:100vh;}
+/* Sidebar */
+.sidebar{width:var(--sidebar-w);background:var(--sidebar-bg);color:var(--sidebar-text);flex-shrink:0;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow-y:auto;transition:transform 0.3s;}
+.sidebar-header{padding:20px 16px;border-bottom:1px solid rgba(255,255,255,0.1);text-align:center;}
+.sidebar-header h2{font-size:1rem;color:#fff;font-weight:700;}
+.sidebar-header small{font-size:0.7rem;color:#94a3b8;}
+.sidebar-nav{flex:1;padding:8px 0;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;font-size:0.88rem;transition:all 0.2s;border-left:3px solid transparent;color:var(--sidebar-text);user-select:none;}
+.nav-item:hover{background:var(--sidebar-hover);color:#e2e8f0;}
+.nav-item.active{background:rgba(59,130,246,0.15);border-left-color:var(--sidebar-active);color:#fff;font-weight:600;}
+.nav-item .icon{font-size:1.1rem;width:22px;text-align:center;}
+.nav-divider{padding:12px 20px 4px;font-size:0.7rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;}
+.nav-sub{padding-left:36px !important;font-size:0.8rem !important;}
+.sidebar-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;gap:6px;}
+.sidebar-footer button{background:transparent;border:1px solid rgba(255,255,255,0.15);color:var(--sidebar-text);padding:8px 12px;border-radius:6px;cursor:pointer;font-size:0.78rem;text-align:left;transition:all 0.2s;}
+.sidebar-footer button:hover{background:var(--sidebar-hover);color:#fff;}
+/* Main Content */
+.main-content{margin-left:var(--sidebar-w);flex:1;padding:20px 24px;min-height:100vh;transition:margin-left 0.3s;}
+.page-header{margin-bottom:20px;}
+.page-header h1{font-size:1.5rem;color:var(--text);}
+.page-header p{color:var(--text-secondary);font-size:0.85rem;}
+/* Cards */
+.card{background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);margin-bottom:16px;border:1px solid var(--border);}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.card-header h3{font-size:1.05rem;color:var(--text);}
+.card-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
+.stat-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);text-align:center;border-left:4px solid var(--primary);}
+.stat-card .stat-num{font-size:1.8rem;font-weight:700;color:var(--primary);}
+.stat-card .stat-label{font-size:0.78rem;color:var(--text-secondary);margin-top:4px;}
+.stat-card.warn{border-left-color:var(--warning);}
+.stat-card.warn .stat-num{color:var(--warning);}
+.stat-card.success{border-left-color:var(--success);}
+.stat-card.success .stat-num{color:var(--success);}
+.stat-card.danger{border-left-color:var(--danger);}
+.stat-card.danger .stat-num{color:var(--danger);}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:0.85rem;border:1px solid transparent;transition:all 0.2s;font-family:inherit;}
+.btn-primary{background:var(--primary);color:#fff;border-color:var(--primary);}
+.btn-primary:hover{background:var(--primary-dark);}
+.btn-outline{background:transparent;border-color:var(--border);color:var(--text);}
+.btn-outline:hover{background:var(--bg);}
+.btn-success{background:var(--success);color:#fff;}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-warning{background:var(--warning);color:#fff;}
+.btn-sm{padding:5px 10px;font-size:0.78rem;}
+.btn-lg{padding:12px 24px;font-size:1rem;}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap;}
+/* Forms */
+input,select,textarea{font-family:inherit;font-size:0.85rem;padding:8px 12px;border:1px solid var(--border);border-radius:6px;outline:none;transition:border-color 0.2s;background:var(--card);color:var(--text);}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-light);}
+textarea{resize:vertical;min-height:60px;}
+label{display:block;font-size:0.82rem;color:var(--text-secondary);margin-bottom:4px;font-weight:500;}
+.form-group{margin-bottom:12px;}
+.form-row{display:flex;gap:12px;flex-wrap:wrap;}
+.form-row > *{flex:1;min-width:120px;}
+/* Tables */
+table{width:100%;border-collapse:collapse;font-size:0.85rem;}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);}
+th{background:var(--bg);font-weight:600;color:var(--text-secondary);font-size:0.8rem;text-transform:uppercase;letter-spacing:0.5px;position:sticky;top:0;}
+tr:hover{background:var(--primary-light);}
+.table-wrap{overflow-x:auto;max-height:500px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);}
+/* Tags */
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.72rem;font-weight:600;}
+.tag-blue{background:#dbeafe;color:#1e40af;}
+.tag-green{background:#dcfce7;color:#166534;}
+.tag-red{background:#fee2e2;color:#991b1b;}
+.tag-yellow{background:#fef3c7;color:#92400e;}
+.tag-purple{background:#ede9fe;color:#6b21a8;}
+/* Modules */
+.module{display:none;}
+.module.active{display:block;}
+/* Sub-module tabs */
+.sub-tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px;flex-wrap:wrap;}
+.sub-tab{padding:10px 18px;cursor:pointer;font-size:0.85rem;color:var(--text-secondary);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all 0.2s;user-select:none;}
+.sub-tab:hover{color:var(--primary);}
+.sub-tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600;}
+.sub-module{display:none;}
+.sub-module.active{display:block;}
+/* Student link */
+.student-link{color:var(--primary);cursor:pointer;text-decoration:underline;font-weight:500;}
+.student-link:hover{color:var(--primary-dark);}
+/* Seating */
+.seating-controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
+.seating-controls label{display:flex;align-items:center;gap:6px;}
+.seating-controls input[type=number]{width:60px;}
+.seating-grid{display:inline-grid;gap:6px;margin:0 auto;}
+.seat{width:70px;height:50px;border:1px dashed var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;cursor:pointer;transition:all 0.2s;background:var(--card);position:relative;text-align:center;overflow:hidden;}
+.seat:hover{background:var(--primary-light);border-color:var(--primary);}
+.seat.occupied{background:#dbeafe;border-color:var(--primary);font-weight:600;}
+.seat.conflict{background:#fee2e2 !important;border-color:var(--danger) !important;animation:shake 0.5s;}
+.seat.fixed{box-shadow:0 0 0 2px var(--warning);}
+.seat.drag-over{background:var(--primary-light) !important;border-color:var(--primary) !important;box-shadow:0 0 0 2px var(--primary);}
+.seat .platform{position:absolute;bottom:1px;left:0;right:0;font-size:0.55rem;color:var(--text-secondary);}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.seat-drag-source{opacity:0.5;}
+/* Rules list */
+.rule-list{margin-top:12px;}
+.rule-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg);border-radius:6px;margin-bottom:6px;font-size:0.82rem;}
+.rule-item .rule-badge{font-size:0.7rem;padding:2px 6px;border-radius:10px;}
+.rule-badge.fixed{background:#fef3c7;color:#92400e;}
+.rule-badge.nopair{background:#fee2e2;color:#991b1b;}
+/* Voice recorder */
+.voice-recorder{display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg);border-radius:var(--radius);margin-bottom:12px;}
+.recording-indicator{display:flex;align-items:center;gap:8px;color:var(--danger);font-weight:600;}
+.recording-indicator .dot{width:10px;height:10px;border-radius:50%;background:var(--danger);animation:blink 1s infinite;}
+@keyframes blink{50%{opacity:0.3}}
+/* Big Screen */
+.big-screen-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#0f172a;z-index:9999;color:#e2e8f0;flex-direction:column;}
+.big-screen-overlay.active{display:flex;}
+.big-screen-header{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;background:#1e293b;flex-wrap:wrap;gap:12px;}
+.big-screen-header h2{font-size:1.3rem;}
+.big-screen-close{background:var(--danger);color:#fff;border:none;padding:8px 20px;border-radius:6px;cursor:pointer;font-size:0.9rem;}
+.big-screen-content{flex:1;overflow-y:auto;padding:24px;}
+.big-screen-content .bs-card{background:#1e293b;border-radius:12px;padding:24px;margin-bottom:20px;}
+.big-screen-content table{color:#e2e8f0;}
+.big-screen-content th{background:#334155;color:#94a3b8;}
+.big-screen-content td{border-color:rgba(255,255,255,0.1);}
+.big-screen-content .bs-stat{font-size:2rem;font-weight:700;}
+.big-screen-content .bs-rank-item{display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:1rem;}
+.big-screen-content .bs-rank-item:nth-child(-n+3){font-weight:700;}
+.big-screen-content .bs-rank-item:nth-child(1){color:#fbbf24;}
+.big-screen-content .bs-rank-item:nth-child(2){color:#94a3b8;}
+.big-screen-content .bs-rank-item:nth-child(3){color:#d97706;}
+/* Modals */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;justify-content:center;align-items:flex-start;padding-top:60px;overflow-y:auto;}
+.modal-overlay.active{display:flex;}
+.modal{background:var(--card);border-radius:12px;padding:24px;max-width:700px;width:95%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+.modal h3{margin-bottom:16px;}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
+/* Toggle switch */
+.toggle{position:relative;display:inline-block;width:46px;height:26px;}
+.toggle input{display:none;}
+.toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:26px;transition:0.3s;}
+.toggle-slider:before{content:'';position:absolute;height:20px;width:20px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:0.3s;}
+.toggle input:checked+.toggle-slider{background:var(--primary);}
+.toggle input:checked+.toggle-slider:before{transform:translateX(20px);}
+/* Toast */
+.toast-container{position:fixed;top:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:8px;}
+.toast{padding:12px 20px;border-radius:8px;color:#fff;font-size:0.85rem;box-shadow:0 4px 12px rgba(0,0,0,0.2);animation:slideIn 0.3s ease;max-width:350px;}
+.toast.success{background:var(--success);}
+.toast.error{background:var(--danger);}
+.toast.info{background:var(--primary);}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+/* Empty state */
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-secondary);}
+.empty-state .icon{font-size:2.5rem;margin-bottom:12px;}
+/* Progress bar */
+.progress-bar{height:8px;background:var(--bg);border-radius:4px;overflow:hidden;margin-top:4px;}
+.progress-fill{height:100%;background:var(--primary);border-radius:4px;transition:width 0.3s;}
+/* Week selector */
+.week-selector{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.week-selector button{background:var(--bg);border:1px solid var(--border);padding:4px 10px;border-radius:4px;cursor:pointer;}
+/* Ranking */
+.rank-list{list-style:none;}
+.rank-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--border);}
+.rank-item .rank-num{font-size:1.2rem;font-weight:700;width:30px;text-align:center;}
+.rank-num.gold{color:#f59e0b;}
+.rank-num.silver{color:#64748b;}
+.rank-num.bronze{color:#d97706;}
+/* Grade select */
+.grade-select{width:80px;text-align:center;}
+/* Chart container */
+.chart-wrap{position:relative;width:100%;max-height:300px;margin:12px 0;}
+/* Responsive */
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.mobile-open{transform:translateX(0);}
+  .main-content{margin-left:0;padding:14px;}
+  .mobile-nav-toggle{display:flex !important;position:fixed;bottom:20px;right:20px;z-index:200;width:48px;height:48px;border-radius:50%;background:var(--primary);color:#fff;border:none;font-size:1.3rem;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);}
+  .stat-grid{grid-template-columns:repeat(2,1fr);}
+  .card-row{flex-direction:column;}
+  .form-row{flex-direction:column;}
+  .big-screen-content{padding:12px;}
+}
+.mobile-nav-toggle{display:none;}
+/* Big screen mode scaling */
+html.big-screen{font-size:28.8px;}
+html.big-screen .sidebar{display:none;}
+html.big-screen .main-content{margin-left:0;padding:32px;}
+html.big-screen .mobile-nav-toggle{display:none;}
+/* Syncing indicator */
+.sync-status{font-size:0.7rem;display:flex;align-items:center;gap:4px;padding:6px 12px;border-radius:12px;background:var(--bg);}
+.sync-status.synced{color:var(--success);}
+.sync-status.syncing{color:var(--warning);}
+.sync-status.error{color:var(--danger);}
+/* Color picker for groups */
+.group-color{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);cursor:pointer;display:inline-block;}
+/* Homework grade */
+.grade-badge{padding:3px 8px;border-radius:4px;font-size:0.75rem;font-weight:700;}
+.grade-a-plus{background:#dcfce7;color:#166534;}
+.grade-a{background:#dbeafe;color:#1e40af;}
+.grade-b-plus{background:#fef3c7;color:#92400e;}
+.grade-b{background:#fef9c3;color:#854d0e;}
+.grade-c{background:#fee2e2;color:#991b1b;}
+/* AI panel */
+.ai-panel{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:var(--radius);padding:20px;margin-bottom:16px;}
+.ai-panel h3{margin-bottom:8px;}
+.ai-input{width:100%;padding:12px;border-radius:8px;border:none;font-size:0.9rem;margin-bottom:10px;background:rgba(255,255,255,0.15);color:#fff;}
+.ai-input::placeholder{color:rgba(255,255,255,0.6);}
+.ai-response{background:rgba(255,255,255,0.1);border-radius:8px;padding:12px;margin-top:10px;max-height:300px;overflow-y:auto;font-size:0.85rem;white-space:pre-wrap;display:none;}
+/* Drag handle */
+.drag-handle{cursor:grab;color:var(--text-secondary);}
+.drag-handle:active{cursor:grabbing;}
+</style>
+</head>
+<body>
+<div class="app-container">
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h2>🏫 班主任工作台</h2>
+    <small id="classNameDisplay">未设置班级</small>
+  </div>
+  <div class="sidebar-nav" id="sidebarNav">
+    <!-- Filled by JS -->
+  </div>
+  <div class="sidebar-footer">
+    <button onclick="toggleBigScreen()">🖥️ 大屏投屏模式</button>
+    <button onclick="showSyncSettings()">☁️ 云端同步设置</button>
+    <button onclick="updateClassName()">⚙️ 设置班级信息</button>
+    <button onclick="showHelp()">❓ 使用说明</button>
+    <span class="sync-status" id="syncStatus">✅ 本地存储</span>
+  </div>
+</nav>
+
+<!-- Mobile toggle -->
+<button class="mobile-nav-toggle" id="mobileNavToggle" onclick="toggleMobileNav()">☰</button>
+
+<!-- Main Content -->
+<main class="main-content" id="mainContent">
+<!-- All module content rendered dynamically by JS -->
+</main>
+</div>
+
+<!-- Big Screen -->
+<div class="big-screen-overlay" id="bigScreenOverlay">
+  <div class="big-screen-header">
+    <h2 id="bigScreenTitle">🖥️ 班级公示大屏</h2>
+    <div class="btn-group">
+      <button class="btn btn-outline btn-sm" onclick="switchBigTab('attendance')" style="color:#fff;border-color:rgba(255,255,255,0.3);">考勤</button>
+      <button class="btn btn-outline btn-sm" onclick="switchBigTab('points')" style="color:#fff;border-color:rgba(255,255,255,0.3);">积分榜</button>
+      <button class="btn btn-outline btn-sm" onclick="switchBigTab('homework')" style="color:#fff;border-color:rgba(255,255,255,0.3);">作业</button>
+      <button class="btn btn-outline btn-sm" onclick="switchBigTab('honors')" style="color:#fff;border-color:rgba(255,255,255,0.3);">荣誉</button>
+      <button class="btn btn-outline btn-sm" onclick="switchBigTab('seating')" style="color:#fff;border-color:rgba(255,255,255,0.3);">座位表</button>
+      <button class="btn btn-outline btn-sm" onclick="switchBigTab('cleaning')" style="color:#fff;border-color:rgba(255,255,255,0.3);">卫生</button>
+      <button class="btn btn-outline btn-sm" onclick="switchBigTab('committee')" style="color:#fff;border-color:rgba(255,255,255,0.3);">班委</button>
+      <button class="big-screen-close" onclick="closeBigScreen()">✕ 退出</button>
+    </div>
+  </div>
+  <div class="big-screen-content" id="bigScreenContent"></div>
+</div>
+
+<!-- Generic Modal -->
+<div class="modal-overlay" id="modalOverlay"><div class="modal" id="modalContent"></div></div>
+<!-- Help Modal -->
+<div class="modal-overlay" id="helpOverlay"><div class="modal" id="helpContent"></div></div>
+<!-- Toast -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ===== UTILITY FUNCTIONS =====
+const $=id=>document.getElementById(id);
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function now(){return new Date().toISOString().split('T')[0];}
+function nowTime(){return new Date().toISOString();}
+function fmtDate(d){if(!d)return '';const p=d.split('T')[0].split('-');return p[1]+'/'+p[2];}
+function fmtFull(d){if(!d)return '';const dt=new Date(d);return dt.getFullYear()+'/'+(dt.getMonth()+1)+'/'+dt.getDate();}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).substr(2,6);}
+function toast(msg,type='info'){const c=$('toastContainer');const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;c.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity 0.3s';setTimeout(()=>t.remove(),300);},2500);}
+function confirmAction(msg,cb){const m=$('modalContent');m.innerHTML='<h3>确认操作</h3><p>'+esc(msg)+'</p><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-danger" id="confirmBtn">确认</button></div>';const o=$('modalOverlay');o.classList.add('active');$('confirmBtn').onclick=()=>{closeModal();cb();};}
+function closeModal(){$('modalOverlay').classList.remove('active');$('helpOverlay').classList.remove('active');}
+
+// ===== DATA MODEL =====
+const SYNC_KEY='headteacher_v3_data';
+const SYNC_CONFIG_KEY='headteacher_v3_sync';
+
+function getDefaultData(){
+  return {
+    classInfo:{className:'',grade:'',term:''},
+    students:[],
+    schedule:{},//{mon_1:'',mon_2:''...}
+    attendance:{},//{date:{studentId:status}}
+    leaveRequests:[],
+    grades:{},//{examName:{studentId:{subject:score}}}
+    points:[],//{id,studentId,value,reason,date,groupName}
+    honors:{class:[],student:[],discipline:[]},//discipline:{id,studentId,type,reason,date}
+    homework:{assignments:[],records:{}},//records:{homeworkId:{studentId:'A+'|'A'|'B+'|'B'|'C'}}
+    counseling:[],//{id,studentId,date,topic,content,followUp,audioUrl}
+    homeSchool:[],//{id,studentId,date,method,content,feedback,audioUrl}
+    comments:{weekly:[],term:[],individual:[]},
+    selections:[],
+    seatingPlans:{},//{planName:[[studentId,...],...]}
+    seatingRules:{fixed:[],nopair:[]},//fixed:[{studentId,row,col}],nopair:[[id1,id2],...]
+    groups:[],//{id,name,leader,members:[studentId],color}
+    cleaning:{areas:[],schedule:{}},//areas:['教室地面','黑板',...],schedule:{weekKey:{area:studentId|groupId}}
+    committee:[],//{id,role,studentId,description}
+    workRecords:[],//{id,date,type,content,result,category}
+    warmMoments:[],//{id,date,studentIds:[],description,feeling}
+    todos:[],
+    quickLinks:[]
+  };
+}
+
+let data=getDefaultData();
+let currentModule='home';
+let currentSubModule='';
+let currentBigTab='attendance';
+let activeSeatingPlan='default';
+let activeCleaningWeek='';
+let editingStudentId=null;
+let charts={};
+
+// ===== DATA PERSISTENCE =====
+function saveData(){
+  const json=JSON.stringify(data);
+  localStorage.setItem(SYNC_KEY,json);
+  $('syncStatus').innerHTML='✅ 已保存';
+  $('syncStatus').className='sync-status synced';
+}
+function loadData(){
+  const raw=localStorage.getItem(SYNC_KEY);
+  if(raw){
+    try{data=Object.assign(getDefaultData(),JSON.parse(raw));}catch(e){data=getDefaultData();}
+  }else{data=getDefaultData();}
+  if(!data.students)data.students=[];
+  if(!data.seatingPlans)data.seatingPlans={};
+  if(!data.seatingRules)data.seatingRules={fixed:[],nopair:[]};
+  if(!data.groups)data.groups=[];
+  if(!data.cleaning)data.cleaning={areas:[],schedule:{}};
+  if(!data.committee)data.committee=[];
+  if(!data.workRecords)data.workRecords=[];
+  if(!data.warmMoments)data.warmMoments=[];
+  if(!data.todos)data.todos=[];
+  $('classNameDisplay').textContent=data.classInfo.className||'未设置班级';
+}
+
+// ===== CLOUD SYNC (GitHub Gist) =====
+let githubToken='';
+let gistId='';
+let syncTimer=null;
+const GIST_API='https://api.github.com/gists';
+const GIST_FILENAME='banshujian-data.json';
+
+function loadSyncConfig(){
+  const cfg=localStorage.getItem(SYNC_CONFIG_KEY);
+  if(cfg)try{const c=JSON.parse(cfg);githubToken=c.token||'';gistId=c.gistId||'';autoSyncEnabled=c.autoSync||false;}catch(e){}
+}
+function saveSyncConfig(){localStorage.setItem(SYNC_CONFIG_KEY,JSON.stringify({token:githubToken,gistId:gistId,autoSync:autoSyncEnabled}));}
+
+function showSyncSettings(){
+  const m=$('modalContent');
+  m.innerHTML='<h3>☁️ 云端同步设置（GitHub Gist · 永久有效）</h3>'+
+    '<div class="form-group"><label>🔑 GitHub Token</label><input id="ghTokenInput" type="password" value="'+esc(githubToken)+'" placeholder="ghp_xxxxxxxxxxxx" style="width:100%"><small style="color:var(--text-secondary)">需要 <code>gist</code> 权限。在 <a href="https://github.com/settings/tokens" target="_blank">GitHub Settings → Tokens</a> 创建 Classic Token</small></div>'+
+    '<div class="form-group"><label>📋 Gist ID（自动生成，无需手动填写）</label><input id="gistIdInput" value="'+esc(gistId)+'" placeholder="首次推送后自动获取..." style="width:100%" readonly></div>'+
+    '<div class="form-group"><label><input type="checkbox" id="autoSyncCheck" '+(autoSyncEnabled?'checked':'')+'> 启用自动同步（每60秒）</label></div>'+
+    '<div class="btn-group" style="margin-bottom:12px"><button class="btn btn-primary" onclick="pushToCloud()">📤 推送到云端</button><button class="btn btn-outline" onclick="pullFromCloud()">📥 从云端拉取</button><button class="btn btn-outline" onclick="deleteGist()" style="color:var(--danger)">🗑️ 删除云端数据</button></div>'+
+    '<p style="font-size:0.78rem;color:var(--text-secondary)">✅ GitHub Gist 链接<strong>永久有效</strong>，数据不会过期。首次使用：创建 Token → 粘贴 → 推送即可自动创建 Gist。之后所有设备粘贴同一个 Token + Gist ID 即可同步。</p>'+
+    '<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal();saveSyncSettings()">保存设置</button></div>';
+  $('modalOverlay').classList.add('active');
+}
+
+function saveSyncSettings(){
+  githubToken=$('ghTokenInput')?$('ghTokenInput').value:githubToken;
+  gistId=$('gistIdInput')?$('gistIdInput').value:gistId;
+  autoSyncEnabled=$('autoSyncCheck')&&$('autoSyncCheck').checked;
+  if(autoSyncEnabled){startAutoSync();}else{stopAutoSync();}
+  saveSyncConfig();closeModal();toast('同步设置已保存','success');
+}
+
+function startAutoSync(){stopAutoSync();syncTimer=setInterval(pullFromCloud,60000);}
+function stopAutoSync(){if(syncTimer){clearInterval(syncTimer);syncTimer=null;}}
+
+async function pushToCloud(){
+  $('syncStatus').innerHTML='⏳ 同步中...';$('syncStatus').className='sync-status syncing';
+  const token=githubToken||($('ghTokenInput')?$('ghTokenInput').value:'');
+  if(!token){toast('请先填写 GitHub Token','error');$('syncStatus').innerHTML='⚠️ 未配置Token';$('syncStatus').className='sync-status error';return;}
+  const content=JSON.stringify({data,updatedAt:nowTime(),device:'pc'},null,2);
+  try{
+    let resp;
+    const currentGistId=gistId||($('gistIdInput')?$('gistIdInput').value:'');
+    if(currentGistId){
+      resp=await fetch(GIST_API+'/'+currentGistId,{
+        method:'PATCH',headers:{'Authorization':'token '+token,'Content-Type':'application/json'},
+        body:JSON.stringify({files:{[GIST_FILENAME]:{content:content}}})
+      });
+    }else{
+      resp=await fetch(GIST_API,{
+        method:'POST',headers:{'Authorization':'token '+token,'Content-Type':'application/json'},
+        body:JSON.stringify({description:'班主任工作台数据',public:false,files:{[GIST_FILENAME]:{content:content}}})
+      });
+    }
+    if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.message||'HTTP '+resp.status);}
+    const result=await resp.json();
+    if(!currentGistId){
+      gistId=result.id;
+      if($('gistIdInput'))$('gistIdInput').value=gistId;
+    }
+    saveSyncConfig();
+    toast('已推送到云端 ✅','success');
+    $('syncStatus').innerHTML='☁️ 已同步';$('syncStatus').className='sync-status synced';
+  }catch(e){
+    toast('同步失败: '+e.message,'error');
+    $('syncStatus').innerHTML='⚠️ 同步失败';$('syncStatus').className='sync-status error';
+  }
+}
+
+async function pullFromCloud(){
+  const token=githubToken;const currentGistId=gistId;
+  if(!token||!currentGistId)return;
+  try{
+    const resp=await fetch(GIST_API+'/'+currentGistId,{headers:{'Authorization':'token '+token}});
+    if(!resp.ok)return;
+    const gist=await resp.json();
+    const file=gist.files&&gist.files[GIST_FILENAME];
+    if(!file||!file.content)return;
+    const remote=JSON.parse(file.content);
+    if(remote&&remote.data&&remote.updatedAt){
+      const localRaw=localStorage.getItem(SYNC_KEY);
+      const localTime=localRaw?JSON.parse(localRaw).updatedAt||'':'';
+      if(remote.updatedAt>localTime){
+        data=Object.assign(getDefaultData(),remote.data);
+        saveData();renderAll();
+        toast('已从云端同步最新数据','success');
+      }
+    }
+    $('syncStatus').innerHTML='☁️ 已同步';$('syncStatus').className='sync-status synced';
+  }catch(e){}
+}
+
+async function deleteGist(){
+  const token=githubToken||($('ghTokenInput')?$('ghTokenInput').value:'');
+  const currentGistId=gistId||($('gistIdInput')?$('gistIdInput').value:'');
+  if(!token||!currentGistId){toast('没有可删除的云端数据','error');return;}
+  if(!confirm('确定要删除云端 Gist 数据吗？此操作不可撤销！'))return;
+  try{
+    const resp=await fetch(GIST_API+'/'+currentGistId,{method:'DELETE',headers:{'Authorization':'token '+token}});
+    if(!resp.ok)throw new Error('删除失败');
+    gistId='';if($('gistIdInput'))$('gistIdInput').value='';
+    saveSyncConfig();stopAutoSync();
+    toast('云端数据已删除','success');
+    $('syncStatus').innerHTML='✅ 本地存储';$('syncStatus').className='sync-status synced';
+  }catch(e){toast('删除失败: '+e.message,'error');}
+}
+function exportData(){
+  const blob=new Blob([JSON.stringify({data,updatedAt:nowTime(),version:'v3'},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='班主任工作台_备份_'+now()+'.json';a.click();
+  toast('数据已导出','success');
+}
+function importData(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  inp.onchange=function(){
+    const reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        const json=JSON.parse(e.target.result);
+        if(json.data){data=Object.assign(getDefaultData(),json.data);saveData();renderAll();toast('数据已导入','success');}
+        else{toast('无效的备份文件','error');}
+      }catch(ex){toast('文件解析失败','error');}
+    };
+    reader.readAsText(inp.files[0]);
+  };
+  inp.click();
+}
+
+// ===== NAVIGATION =====
+const navItems=[
+  {id:'home',icon:'🏠',label:'首页概览'},
+  {id:'schedule',icon:'📅',label:'课表'},
+  {divider:'学生管理'},
+  {id:'students',icon:'👥',label:'学生信息'},
+  {id:'seating',icon:'🪑',label:'排座位'},
+  {id:'groups',icon:'👨‍👩‍👧‍👦',label:'学习小组'},
+  {id:'cleaning',icon:'🧹',label:'卫生安排表'},
+  {id:'committee',icon:'🏅',label:'班委'},
+  {divider:'教学管理'},
+  {id:'attendance',icon:'✅',label:'考勤管理'},
+  {id:'grades',icon:'📝',label:'成绩管理'},
+  {id:'points',icon:'⭐',label:'加减分管理'},
+  {id:'honors',icon:'🏆',label:'荣誉与处分'},
+  {id:'homework',icon:'📖',label:'作业管理'},
+  {divider:'师生沟通'},
+  {id:'counseling',icon:'💛',label:'谈心谈话'},
+  {id:'homeSchool',icon:'📞',label:'家校沟通'},
+  {id:'comments',icon:'✍️',label:'教师评语'},
+  {divider:'综合管理'},
+  {id:'selections',icon:'🎖️',label:'评选管理'},
+  {id:'toolkit',icon:'🧠',label:'班主任锦囊'},
+  {id:'selfImprove',icon:'📋',label:'自身提升与述职'}
+];
+
+function buildSidebar(){
+  let h='';
+  for(const item of navItems){
+    if(item.divider){h+='<div class="nav-divider">'+esc(item.divider)+'</div>';continue;}
+    h+='<div class="nav-item'+(currentModule===item.id?' active':'')+'" onclick="navigate(\''+item.id+'\')" id="nav_'+item.id+'">';
+    h+='<span class="icon">'+item.icon+'</span>'+esc(item.label)+'</div>';
+  }
+  $('sidebarNav').innerHTML=h;
+}
+function navigate(moduleId){
+  currentModule=moduleId;currentSubModule='';
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  const nav=$('nav_'+moduleId);if(nav)nav.classList.add('active');
+  renderAll();
+  if(window.innerWidth<768){$('sidebar').classList.remove('mobile-open');}
+}
+function toggleMobileNav(){$('sidebar').classList.toggle('mobile-open');}
+
+// ===== RENDER ALL =====
+function renderAll(){
+  buildSidebar();
+  switch(currentModule){
+    case 'home':renderHome();break;
+    case 'schedule':renderSchedule();break;
+    case 'students':renderStudents();break;
+    case 'seating':renderSeating();break;
+    case 'groups':renderGroups();break;
+    case 'cleaning':renderCleaning();break;
+    case 'committee':renderCommittee();break;
+    case 'attendance':renderAttendance();break;
+    case 'grades':renderGrades();break;
+    case 'points':renderPoints();break;
+    case 'honors':renderHonors();break;
+    case 'homework':renderHomework();break;
+    case 'counseling':renderCounseling();break;
+    case 'homeSchool':renderHomeSchool();break;
+    case 'comments':renderComments();break;
+    case 'selections':renderSelections();break;
+    case 'toolkit':renderToolkit();break;
+    case 'selfImprove':renderSelfImprove();break;
+  }
+}
+
+// ===== STUDENT HELPERS =====
+function getStudent(id){return data.students.find(s=>s.id===id);}
+function getStudentName(id){const s=getStudent(id);return s?s.name:'未知';}
+function studentSelectHTML(name,selected){let h='<select class="'+name+'-select" id="'+name+'_select"><option value="">-- 选择学生 --</option>';data.students.forEach(s=>{h+='<option value="'+esc(s.id)+'"'+(selected===s.id?' selected':'')+'>'+esc(s.name)+'</option>';});h+='</select>';return h;}
+function getStudentSelectVal(id){const el=$(id+'_select');return el?el.value:'';}
+
+// ===== HOME =====
+function renderHome(){
+  const today=now();
+  const birthdayKids=data.students.filter(s=>s.birthdate&&s.birthdate.slice(5)===today.slice(5));
+  const boys=data.students.filter(s=>s.gender==='男').length;
+  const girls=data.students.filter(s=>s.gender==='女').length;
+  const todayAttendance=data.attendance[today]||{};
+  const present=Object.values(todayAttendance).filter(v=>v==='出勤').length;
+  const absent=data.students.length-present;
+  const incompleteTodos=data.todos.filter(t=>!t.done).length;
+  // Get on-duty for today
+  const dayOfWeek=new Date().getDay();
+  const weekDays=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  const todayKey=weekDays[dayOfWeek];
+  let dutyInfo='未设置值日';
+  if(data.cleaning.schedule){
+    const weekKeys=Object.keys(data.cleaning.schedule);
+    if(weekKeys.length>0){
+      const wk=data.cleaning.schedule[weekKeys[0]];
+      if(wk&&wk[todayKey])dutyInfo='查看卫生安排表';
+    }
+  }
+  let h='<div class="page-header"><h1>🏠 首页概览</h1><p>'+data.classInfo.className+' · '+data.classInfo.grade+' · 学期：'+data.classInfo.term+'</p></div>';
+  h+='<div class="stat-grid">';
+  h+='<div class="stat-card"><div class="stat-num">'+data.students.length+'</div><div class="stat-label">班级总人数</div></div>';
+  h+='<div class="stat-card"><div class="stat-num">'+boys+'</div><div class="stat-label">男生</div></div>';
+  h+='<div class="stat-card"><div class="stat-num">'+girls+'</div><div class="stat-label">女生</div></div>';
+  h+='<div class="stat-card success"><div class="stat-num">'+present+'</div><div class="stat-label">今日出勤</div></div>';
+  h+='<div class="stat-card warn"><div class="stat-num">'+incompleteTodos+'</div><div class="stat-label">待办事项</div></div>';
+  h+='</div>';
+  // Birthday
+  h+='<div class="card"><div class="card-header"><h3>🎂 今日生日提醒</h3></div>';
+  if(birthdayKids.length===0)h+='<p class="empty-state">今日没有学生过生日</p>';
+  else h+='<div class="card-row">'+birthdayKids.map(s=>'<span class="tag tag-yellow" style="font-size:0.9rem;padding:6px 12px;">🎉 '+esc(s.name)+'</span>').join(' ')+'</div>';
+  h+='</div>';
+  // Duty + Todo
+  h+='<div class="card-row" style="display:flex;gap:16px"><div class="card" style="flex:1"><div class="card-header"><h3>📋 今日值日</h3></div><p>'+esc(dutyInfo)+' <a href="#" onclick="navigate(\'cleaning\')" style="color:var(--primary)">查看详情→</a></p></div>';
+  h+='<div class="card" style="flex:1"><div class="card-header"><h3>⏰ 本周待办</h3><button class="btn btn-primary btn-sm" onclick="addTodo()">+ 新增</button></div>';
+  if(data.todos.length===0)h+='<p class="empty-state">暂无待办事项</p>';
+  else{
+    h+='<div>'+data.todos.map(t=>'<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)"><input type="checkbox" '+(t.done?'checked':'')+' onchange="toggleTodo(\''+t.id+'\')" style="width:18px;height:18px"><span style="flex:1;'+(t.done?'text-decoration:line-through;color:var(--text-secondary)':'')+'">'+esc(t.text)+'</span><button class="btn btn-sm btn-outline" style="color:var(--danger);border:none;padding:2px 6px" onclick="deleteTodo(\''+t.id+'\')">✕</button></div>').join('')+'</div>';
+  }
+  h+='</div></div>';
+  // Quick actions
+  h+='<div class="card"><div class="card-header"><h3>⚡ 快捷操作</h3></div><div class="btn-group">';
+  h+='<button class="btn btn-primary" onclick="navigate(\'attendance\')">📋 今日考勤</button>';
+  h+='<button class="btn btn-outline" onclick="navigate(\'homework\')">📖 布置作业</button>';
+  h+='<button class="btn btn-outline" onclick="navigate(\'points\')">⭐ 加减分</button>';
+  h+='<button class="btn btn-outline" onclick="navigate(\'counseling\')">💛 谈心记录</button>';
+  h+='<button class="btn btn-outline" onclick="navigate(\'homeSchool\')">📞 家校沟通</button>';
+  h+='<button class="btn btn-outline" onclick="exportData()">📤 导出备份</button>';
+  h+='<button class="btn btn-outline" onclick="importData()">📥 导入备份</button>';
+  h+='</div></div>';
+  $('mainContent').innerHTML=h;
+}
+
+// ===== TODO =====
+function addTodo(){
+  const text=prompt('请输入待办事项：');
+  if(text&&text.trim()){data.todos.push({id:uid(),text:text.trim(),done:false,date:now()});saveData();renderHome();}
+}
+function toggleTodo(id){const t=data.todos.find(x=>x.id===id);if(t){t.done=!t.done;saveData();renderHome();}}
+function deleteTodo(id){data.todos=data.todos.filter(x=>x.id!==id);saveData();renderHome();}
+
+// ===== SCHEDULE =====
+function renderSchedule(){
+  const days=['周一','周二','周三','周四','周五'];
+  const periods=['早读','第1节','第2节','第3节','第4节','午休','第5节','第6节','第7节','第8节'];
+  let h='<div class="page-header"><h1>📅 周课表</h1></div><div class="card"><div class="table-wrap"><table><thead><tr><th>节次</th>';
+  days.forEach(d=>h+='<th>'+d+'</th>');
+  h+='</tr></thead><tbody>';
+  periods.forEach((p,i)=>{
+    h+='<tr><td style="font-weight:600">'+p+'</td>';
+    days.forEach((d,j)=>{
+      const key=(j+1)+'_'+(i+1);
+      const val=data.schedule[key]||'';
+      h+='<td><input value="'+esc(val)+'" onchange="updateSchedule(\''+key+'\',this.value)" style="width:100%;border:none;background:transparent;padding:4px" placeholder=""></td>';
+    });
+    h+='</tr>';
+  });
+  h+='</tbody></table></div></div>';
+  $('mainContent').innerHTML=h;
+}
+function updateSchedule(key,val){data.schedule[key]=val;saveData();}
+
+// ===== STUDENT INFO =====
+function renderStudents(){
+  let h='<div class="page-header"><h1>👥 学生信息</h1><div class="btn-group"><button class="btn btn-primary" onclick="editStudent(null)">+ 新增学生</button><input id="studentSearch" placeholder="🔍 搜索学生..." oninput="renderStudents()" style="width:200px"></div></div>';
+  const q=($('studentSearch')?.value||'').toLowerCase();
+  const filtered=q?data.students.filter(s=>s.name.toLowerCase().includes(q)):data.students;
+  h+='<div class="card"><div class="table-wrap"><table><thead><tr><th>姓名</th><th>性别</th><th>出生日期</th><th>联系方式</th><th>住址</th><th>特殊备注</th><th>操作</th></tr></thead><tbody>';
+  if(filtered.length===0)h+='<tr><td colspan="7" class="empty-state">暂无学生数据</td></tr>';
+  else filtered.forEach(s=>{
+    h+='<tr><td><span class="student-link" onclick="showStudentDetail(\''+s.id+'\')">'+esc(s.name)+'</span></td>';
+    h+='<td>'+esc(s.gender||'')+'</td><td>'+esc(s.birthdate||'')+'</td><td>'+esc(s.phone||'')+'</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(s.address||'')+'</td><td style="max-width:120px">'+esc(s.note||'')+'</td>';
+    h+='<td><div class="btn-group"><button class="btn btn-sm btn-outline" onclick="editStudent(\''+s.id+'\')">编辑</button><button class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="if(confirm(\'确定删除学生 '+esc(s.name)+' ？\')){data.students=data.students.filter(x=>x.id!==\''+s.id+'\');saveData();renderAll();}">删除</button></div></td></tr>';
+  });
+  h+='</tbody></table></div></div>';
+  $('mainContent').innerHTML=h;
+}
+function editStudent(id){
+  const s=id?getStudent(id):{};
+  const title=s.name?'编辑学生：'+esc(s.name):'新增学生';
+  let h='<h3>'+title+'</h3>';
+  h+='<div class="form-row"><div class="form-group"><label>姓名</label><input id="edit_sname" value="'+esc(s.name||'')+'"></div><div class="form-group"><label>性别</label><select id="edit_sgender"><option value="男"'+(s.gender==='男'?' selected':'')+'>男</option><option value="女"'+(s.gender==='女'?' selected':'')+'>女</option></select></div></div>';
+  h+='<div class="form-row"><div class="form-group"><label>出生日期</label><input id="edit_sbirth" type="date" value="'+esc(s.birthdate||'')+'"></div><div class="form-group"><label>家庭联系方式</label><input id="edit_sphone" value="'+esc(s.phone||'')+'"></div></div>';
+  h+='<div class="form-group"><label>家庭住址</label><input id="edit_saddr" value="'+esc(s.address||'')+'" style="width:100%"></div>';
+  h+='<div class="form-group"><label>特殊备注</label><textarea id="edit_snote" style="width:100%">'+esc(s.note||'')+'</textarea></div>';
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="saveStudent(\''+(id||'')+'\')">保存</button></div>';
+  $('modalContent').innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function saveStudent(id){
+  const s={name:$('edit_sname').value,gender:$('edit_sgender').value,birthdate:$('edit_sbirth').value,phone:$('edit_sphone').value,address:$('edit_saddr').value,note:$('edit_snote').value};
+  if(!s.name){toast('请输入姓名','error');return;}
+  if(id){const idx=data.students.findIndex(x=>x.id===id);if(idx>=0){s.id=id;data.students[idx]=s;}}
+  else{s.id=uid();data.students.push(s);}
+  saveData();closeModal();renderAll();toast('学生信息已保存','success');
+}
+
+<!-- STUDENT DETAIL: see previous chunk -->
+
+// ===== SEATING =====
+function renderSeating(){
+  if(!data.seatingPlans[activeSeatingPlan])data.seatingPlans[activeSeatingPlan]=[];
+  const plan=data.seatingPlans[activeSeatingPlan]||[];
+  const planNames=Object.keys(data.seatingPlans);
+  let rows=parseInt(localStorage.getItem('seating_rows')||6);
+  let cols=parseInt(localStorage.getItem('seating_cols')||7);
+  const planArr=[];
+  for(let r=0;r<rows;r++){planArr[r]=plan[r]||[];for(let c=0;c<cols;c++)planArr[r][c]=planArr[r][c]||null;}
+  let h='<div class="page-header"><h1>🪑 排座位</h1><p>当前方案：'+esc(activeSeatingPlan)+'</p></div>';
+  h+='<div class="seating-controls"><label>行数<input type="number" id="seatRows" value="'+rows+'" min="3" max="12"></label><label>列数<input type="number" id="seatCols" value="'+cols+'" min="3" max="12"></label><button class="btn btn-outline btn-sm" onclick="updateSeatingSize()">更新布局</button><button class="btn btn-success btn-sm" onclick="smartSeating()">🧠 智能排座</button><button class="btn btn-outline btn-sm" onclick="saveSeating()">💾 保存方案</button><button class="btn btn-outline btn-sm" onclick="switchSeatingPlan()">📂 切换方案</button></div>';
+  // Rules panel
+  h+='<div class="card" style="margin-bottom:12px"><div class="card-header"><h3>🔧 排座规则</h3><button class="btn btn-outline btn-sm" onclick="addSeatRule()">+ 添加规则</button></div><div class="rule-list" id="seatRuleList">';
+  data.seatingRules.fixed.forEach(r=>{h+='<div class="rule-item"><span class="rule-badge fixed">固定座位</span>'+esc(getStudentName(r.studentId))+' → 第'+(r.row+1)+'排第'+(r.col+1)+'列 <button class="btn btn-sm btn-outline" style="color:var(--danger);margin-left:auto" onclick="removeSeatRule(\'fixed\',\''+r.studentId+'\')">✕</button></div>';});
+  data.seatingRules.nopair.forEach(r=>{h+='<div class="rule-item"><span class="rule-badge nopair">不能同坐</span>'+esc(getStudentName(r[0]))+' ↔ '+esc(getStudentName(r[1]))+' <button class="btn btn-sm btn-outline" style="color:var(--danger);margin-left:auto" onclick="removeSeatRule(\'nopair\',\''+r[0]+'_'+r[1]+'\')">✕</button></div>';});
+  if(data.seatingRules.fixed.length===0&&data.seatingRules.nopair.length===0)h+='<p style="color:var(--text-secondary);font-size:0.8rem">暂无规则，点击上方按钮添加</p>';
+  h+='</div></div>';
+  // Grid
+  h+='<div class="card"><div style="text-align:center;padding:20px"><div class="seating-grid" id="seatingGrid" style="grid-template-columns:repeat('+cols+',1fr)">';
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const sid=planArr[r][c];
+      const isFixed=data.seatingRules.fixed.some(f=>f.studentId===sid);
+      let conflicts=[];
+      if(sid&&c%2===0&&planArr[r][c+1]){const pair=[sid,planArr[r][c+1]].sort();if(data.seatingRules.nopair.some(n=>n[0]===pair[0]&&n[1]===pair[1]))conflicts.push('同桌冲突');}
+      if(sid&&c%2===1&&planArr[r][c-1]){const pair=[sid,planArr[r][c-1]].sort();if(data.seatingRules.nopair.some(n=>n[0]===pair[0]&&n[1]===pair[1]))conflicts.push('同桌冲突');}
+      h+='<div class="seat'+(sid?' occupied':'')+(conflicts.length?' conflict':'')+(isFixed?' fixed':'')+'" onclick="clickSeat('+r+','+c+')" data-row="'+r+'" data-col="'+c+'">';
+      if(sid)h+=esc(getStudentName(sid))+(isFixed?' 📌':'')+(conflicts.length?' ⚠':'');
+      h+='<div class="platform">讲台</div>';(r===0?h+='<style>#seatingGrid .seat[data-row="0"] .platform{display:block}</style>':'');
+      h+='</div>';
+    }
+  }
+  h+='</div></div></div>';
+  $('mainContent').innerHTML=h;
+  // Add drag support
+  document.querySelectorAll('.seat.occupied').forEach(el=>{el.draggable=true;el.ondragstart=e=>{e.dataTransfer.setData('text/plain',JSON.stringify({row:parseInt(el.dataset.row),col:parseInt(el.dataset.col)}));el.classList.add('seat-drag-source');};el.ondragend=e=>{el.classList.remove('seat-drag-source');};});
+  document.querySelectorAll('.seat:not(.occupied)').forEach(el=>{el.ondragover=e=>{e.preventDefault();el.classList.add('drag-over');};el.ondragleave=e=>{el.classList.remove('drag-over');};el.ondrop=e=>{e.preventDefault();el.classList.remove('drag-over');const src=JSON.parse(e.dataTransfer.getData('text/plain'));moveSeat(src.row,src.col,parseInt(el.dataset.row),parseInt(el.dataset.col));};});
+}
+function updateSeatingSize(){const rows=parseInt($('seatRows').value);const cols=parseInt($('seatCols').value);localStorage.setItem('seating_rows',rows);localStorage.setItem('seating_cols',cols);const plan=data.seatingPlans[activeSeatingPlan]||[];const newPlan=[];for(let r=0;r<rows;r++){newPlan[r]=[];for(let c=0;c<cols;c++)newPlan[r][c]=(plan[r]&&plan[r][c])||null;}data.seatingPlans[activeSeatingPlan]=newPlan;saveData();renderSeating();}
+function clickSeat(r,c){
+  const plan=data.seatingPlans[activeSeatingPlan]||[];
+  const sid=(plan[r]&&plan[r][c])||null;
+  if(sid){if(confirm('将'+esc(getStudentName(sid))+'从此位置移除？')){plan[r][c]=null;saveData();renderSeating();}}
+  else{
+    const m=$('modalContent');let h='<h3>选择学生</h3><div style="max-height:300px;overflow-y:auto">';
+    data.students.forEach(s=>{h+='<div class="seat occupied" style="display:inline-flex;margin:4px;cursor:pointer;width:80px;height:40px" onclick="assignSeat('+r+','+c+',\''+s.id+'\')">'+esc(s.name)+'</div>';});
+    h+='</div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button></div>';
+    m.innerHTML=h;$('modalOverlay').classList.add('active');
+  }
+}
+function assignSeat(r,c,sid){
+  if(!data.seatingPlans[activeSeatingPlan])data.seatingPlans[activeSeatingPlan]=[];
+  const plan=data.seatingPlans[activeSeatingPlan];
+  if(!plan[r])plan[r]=[];
+  for(let i=0;i<plan.length;i++){if(plan[i]){for(let j=0;j<plan[i].length;j++){if(plan[i][j]===sid)plan[i][j]=null;}}}
+  plan[r][c]=sid;
+  // Check conflicts
+  const fixedRule=data.seatingRules.fixed.find(f=>f.studentId===sid);
+  if(fixedRule&&(fixedRule.row!==r||fixedRule.col!==c))toast('⚠️ 该学生有固定座位规则，位置已锁定在第'+(fixedRule.row+1)+'排第'+(fixedRule.col+1)+'列','warn');
+  // Check nopair
+  const neighbors=[];
+  if(c>0&&plan[r][c-1])neighbors.push(plan[r][c-1]);
+  if(c<plan[r].length-1&&plan[r][c+1])neighbors.push(plan[r][c+1]);
+  neighbors.forEach(nid=>{
+    const pair=[sid,nid].sort();
+    if(data.seatingRules.nopair.some(n=>n[0]===pair[0]&&n[1]===pair[1]))toast('⚠️ 与同桌存在冲突：'+esc(getStudentName(sid))+' 和 '+esc(getStudentName(nid))+' 设置了不能同坐','error');
+  });
+  saveData();closeModal();renderSeating();
+}
+function moveSeat(fr,fc,tr,tc){
+  const plan=data.seatingPlans[activeSeatingPlan]||[];
+  if(!plan[fr])plan[fr]=[];
+  const sid=plan[fr][fc];
+  if(!sid)return;
+  if(!plan[tr])plan[tr]=[];
+  plan[tr][tc]=sid;plan[fr][fc]=null;
+  saveData();renderSeating();
+}
+function saveSeating(){data.seatingPlans[activeSeatingPlan]=data.seatingPlans[activeSeatingPlan]||[];saveData();toast('座位已保存','success');}
+function switchSeatingPlan(){
+  const names=Object.keys(data.seatingPlans);
+  const m=$('modalContent');let h='<h3>切换/管理座位方案</h3>';
+  h+='<div style="margin-bottom:12px"><input id="newPlanName" placeholder="新建方案名称..."><button class="btn btn-primary btn-sm" onclick="createSeatingPlan()">+ 新建</button></div>';
+  names.forEach(n=>{h+='<div style="display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid var(--border)"><span style="flex:1;font-weight:'+(n===activeSeatingPlan?'600':'400')+'">'+esc(n)+(n===activeSeatingPlan?' (当前)':'')+'</span><button class="btn btn-sm btn-primary" onclick="activeSeatingPlan=\''+esc(n)+'\';closeModal();renderSeating();">使用</button><button class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="deleteSeatingPlan(\''+esc(n)+'\')">删除</button></div>';});
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">关闭</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function createSeatingPlan(){const name=$('newPlanName').value;if(!name){toast('请输入方案名称','error');return;}if(data.seatingPlans[name]){toast('方案名称已存在','error');return;}data.seatingPlans[name]=[];activeSeatingPlan=name;saveData();closeModal();renderSeating();}
+function deleteSeatingPlan(name){if(Object.keys(data.seatingPlans).length<=1){toast('至少保留一个方案','error');return;}delete data.seatingPlans[name];if(activeSeatingPlan===name)activeSeatingPlan=Object.keys(data.seatingPlans)[0];saveData();closeModal();renderSeating();}
+function addSeatRule(){
+  const m=$('modalContent');let h='<h3>添加排座规则</h3>';
+  h+='<div class="form-group"><label>规则类型</label><select id="ruleType"><option value="fixed">固定座位</option><option value="nopair">不能同坐</option></select></div>';
+  h+='<div class="form-group" id="ruleStudent1"><label>学生</label>'+studentSelectHTML('rule_stu','')+'</div>';
+  h+='<div class="form-row" id="rulePos" style="display:none"><div class="form-group"><label>固定排数(从1开始)</label><input type="number" id="ruleRow" min="1" max="12" value="1"></div><div class="form-group"><label>固定列数(从1开始)</label><input type="number" id="ruleCol" min="1" max="12" value="1"></div></div>';
+  h+='<div class="form-group" id="ruleStudent2" style="display:none"><label>不能同坐的学生</label>'+studentSelectHTML('rule_stu2','')+'</div>';
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="saveSeatRule()">保存</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+  $('ruleType').onchange=function(){
+    if(this.value==='fixed'){$('rulePos').style.display='flex';$('ruleStudent2').style.display='none';}
+    else{$('rulePos').style.display='none';$('ruleStudent2').style.display='block';}
+  };
+}
+function saveSeatRule(){
+  const type=$('ruleType').value;
+  const sid1=$('rule_stu_select').value;
+  if(!sid1){toast('请选择学生','error');return;}
+  if(type==='fixed'){
+    const row=parseInt($('ruleRow').value)-1;const col=parseInt($('ruleCol').value)-1;
+    const exist=data.seatingRules.fixed.findIndex(f=>f.studentId===sid1);
+    if(exist>=0)data.seatingRules.fixed.splice(exist,1);
+    data.seatingRules.fixed.push({studentId:sid1,row,col});
+  }else{
+    const sid2=$('rule_stu2_select').value;
+    if(!sid2||sid1===sid2){toast('请选择两个不同的学生','error');return;}
+    const pair=[sid1,sid2].sort();
+    if(data.seatingRules.nopair.some(n=>n[0]===pair[0]&&n[1]===pair[1])){toast('此规则已存在','error');return;}
+    data.seatingRules.nopair.push(pair);
+  }
+  saveData();closeModal();renderSeating();toast('规则已添加','success');
+}
+function removeSeatRule(type,key){
+  if(type==='fixed')data.seatingRules.fixed=data.seatingRules.fixed.filter(f=>f.studentId!==key);
+  else data.seatingRules.nopair=data.seatingRules.nopair.filter(n=>!(n[0]+'_'+n[1]===key));
+  saveData();renderSeating();toast('规则已删除','success');
+}
+function smartSeating(){
+  if(data.students.length===0){toast('请先添加学生','error');return;}
+  const rows=parseInt(localStorage.getItem('seating_rows')||6);
+  const cols=parseInt(localStorage.getItem('seating_cols')||7);
+  const plan=Array.from({length:rows},()=>Array(cols).fill(null));
+  // Place fixed students first
+  data.seatingRules.fixed.forEach(f=>{if(f.row<rows&&f.col<cols)plan[f.row][f.col]=f.studentId;});
+  // Get unplaced students, shuffle
+  const placed=new Set(data.seatingRules.fixed.map(f=>f.studentId));
+  const unplaced=data.students.filter(s=>!placed.has(s.id));
+  for(let i=unplaced.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[unplaced[i],unplaced[j]]=[unplaced[j],unplaced[i]];}
+  // Fill seats
+  let idx=0;
+  for(let r=0;r<rows&&idx<unplaced.length;r++){
+    for(let c=0;c<cols&&idx<unplaced.length;c++){
+      if(plan[r][c])continue;
+      const sid=unplaced[idx].id;
+      // Check nopair with neighbors
+      let conflict=false;
+      if(c>0&&plan[r][c-1]){const pair=[sid,plan[r][c-1]].sort();if(data.seatingRules.nopair.some(n=>n[0]===pair[0]&&n[1]===pair[1]))conflict=true;}
+      if(c<cols-1&&plan[r][c+1]){const pair=[sid,plan[r][c+1]].sort();if(data.seatingRules.nopair.some(n=>n[0]===pair[0]&&n[1]===pair[1]))conflict=true;}
+      if(conflict){const saved=unplaced[idx];unplaced.push(saved);idx++;if(idx>unplaced.length*2){toast('⚠️ 部分冲突无法避免，已尽力优化','warn');break;}continue;}
+      plan[r][c]=sid;idx++;
+    }
+  }
+  data.seatingPlans[activeSeatingPlan]=plan;saveData();renderSeating();
+  const remaining=unplaced.length-idx+Object.keys(placed).length;
+  toast('智能排座完成！'+(remaining>0?'(有'+remaining+'个学生因冲突未排入座位)':''),'success');
+}
+
+// ===== GROUPS =====
+function renderGroups(){
+  let h='<div class="page-header"><h1>👨‍👩‍👧‍👦 学习小组</h1><div class="btn-group"><button class="btn btn-primary" onclick="addGroup()">+ 新建小组</button><button class="btn btn-outline" onclick="autoGroup()">🎲 自动随机分组</button></div></div>';
+  if(data.groups.length===0)h+='<div class="card"><p class="empty-state">暂无学习小组，点击上方按钮创建</p></div>';
+  else data.groups.forEach(g=>{
+    const memberNames=g.members.map(mid=>getStudentName(mid)).filter(Boolean);
+    h+='<div class="card"><div class="card-header"><h3><span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:'+esc(g.color||'#3b82f6')+';margin-right:8px"></span>'+esc(g.name)+'</h3><span>组长：'+esc(g.leader||'未设置')+' | '+memberNames.length+'人</span></div>';
+    h+='<p>成员：'+memberNames.map(n=>'<span class="tag tag-blue" style="cursor:pointer" onclick="showStudentDetail(\''+(data.students.find(s=>s.name===n)||{}).id+'\')">'+esc(n)+'</span>').join(' ')+'</p>';
+    h+='<div class="btn-group" style="margin-top:8px"><button class="btn btn-sm btn-outline" onclick="editGroup(\''+g.id+'\')">编辑</button><button class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="if(confirm(\'删除小组 '+esc(g.name)+'？\')){data.groups=data.groups.filter(x=>x.id!==\''+g.id+'\');saveData();renderAll();}">删除</button></div></div>';
+  });
+  $('mainContent').innerHTML=h;
+}
+function addGroup(){
+  const m=$('modalContent');let h='<h3>新建学习小组</h3>';
+  h+='<div class="form-group"><label>小组名称</label><input id="gname" placeholder="如：第一组"></div>';
+  h+='<div class="form-group"><label>组长</label>'+studentSelectHTML('gleader','')+'</div>';
+  h+='<div class="form-group"><label>小组颜色</label><input type="color" id="gcolor" value="#3b82f6"></div>';
+  h+='<div class="form-group"><label>选择成员</label><div id="gmembers" style="max-height:200px;overflow-y:auto">'+data.students.map(s=>'<label style="display:block;margin:3px 0"><input type="checkbox" value="'+esc(s.id)+'"> '+esc(s.name)+'</label>').join('')+'</div></div>';
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="saveGroup(null)">创建</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function editGroup(gid){
+  const g=data.groups.find(x=>x.id===gid);if(!g)return;
+  const m=$('modalContent');let h='<h3>编辑小组</h3>';
+  h+='<div class="form-group"><label>小组名称</label><input id="gname" value="'+esc(g.name)+'"></div>';
+  h+='<div class="form-group"><label>组长</label>'+studentSelectHTML('gleader',g.leader)+'</div>';
+  h+='<div class="form-group"><label>小组颜色</label><input type="color" id="gcolor" value="'+esc(g.color||'#3b82f6')+'"></div>';
+  h+='<div class="form-group"><label>选择成员</label><div id="gmembers" style="max-height:200px;overflow-y:auto">'+data.students.map(s=>'<label style="display:block;margin:3px 0"><input type="checkbox" value="'+esc(s.id)+'" '+(g.members.includes(s.id)?'checked':'')+'> '+esc(s.name)+'</label>').join('')+'</div></div>';
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="saveGroup(\''+gid+'\')">保存</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function saveGroup(gid){
+  const name=$('gname').value;if(!name){toast('请输入小组名称','error');return;}
+  const members=Array.from($('gmembers').querySelectorAll('input:checked')).map(x=>x.value);
+  const group={id:gid||uid(),name,leader:$('gleader_select')?$('gleader_select').value:'',members,color:$('gcolor').value};
+  if(gid){const idx=data.groups.findIndex(x=>x.id===gid);if(idx>=0)data.groups[idx]=group;}
+  else data.groups.push(group);
+  saveData();closeModal();renderAll();toast('小组已保存','success');
+}
+function autoGroup(){
+  if(data.students.length===0){toast('请先添加学生','error');return;}
+  const m=$('modalContent');let h='<h3>🎲 自动随机分组</h3>';
+  h+='<div class="form-row"><div class="form-group"><label>分组方式</label><select id="autoType"><option value="count">按每组人数</option><option value="num">按小组数量</option></select></div><div class="form-group"><label>数量</label><input type="number" id="autoNum" value="6" min="2"></div></div>';
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="doAutoGroup()">开始随机分组</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function doAutoGroup(){
+  const type=$('autoType').value;const num=parseInt($('autoNum').value);
+  const shuffled=[...data.students].sort(()=>Math.random()-0.5);
+  const groupCount=type==='num'?num:Math.ceil(shuffled.length/num);
+  const colors=['#ef4444','#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316','#6366f1'];
+  data.groups=[];
+  for(let i=0;i<groupCount;i++){
+    const start=Math.floor(i*shuffled.length/groupCount);
+    const end=Math.floor((i+1)*shuffled.length/groupCount);
+    const members=shuffled.slice(start,end);
+    data.groups.push({id:uid(),name:'第'+(i+1)+'组',leader:'',members:members.map(s=>s.id),color:colors[i%colors.length]});
+  }
+  saveData();closeModal();renderAll();toast('已随机分成 '+groupCount+' 个小组','success');
+}
+
+// ===== ATTENDANCE =====
+function renderAttendance(){
+  const today=now();
+  let h='<div class="page-header"><h1>✅ 考勤管理</h1><div class="btn-group"><button class="btn btn-primary" onclick="quickAttendance()">📋 快速考勤</button><button class="btn btn-outline" onclick="addLeaveRequest()">📝 请假登记</button></div></div>';
+  // Date picker
+  h+='<div class="seating-controls"><label>日期：<input type="date" id="attDate" value="'+today+'" onchange="renderAttendance()"></label></div>';
+  const date=$('attDate')?$('attDate').value:today;
+  const dayData=data.attendance[date]||{};
+  // Attendance table
+  if(data.students.length===0)h+='<div class="card"><p class="empty-state">暂无学生数据，请先在学生信息中添加学生</p></div>';
+  else{
+    h+='<div class="card"><div class="table-wrap"><table><thead><tr><th>姓名</th><th>状态</th><th>备注</th></tr></thead><tbody>';
+    data.students.forEach(s=>{
+      const status=dayData[s.id]||'出勤';
+      h+='<tr><td>'+esc(s.name)+'</td><td><select onchange="updateAttendance(\''+date+'\',\''+s.id+'\',this.value)" style="width:100px">';
+      ['出勤','迟到','缺勤','请假'].forEach(st=>{h+='<option '+(status===st?'selected':'')+'>'+st+'</option>';});
+      h+='</select></td><td>'+esc(dayData[s.id+'_note']||'')+'</td></tr>';
+    });
+    h+='</tbody></table></div></div>';
+    // Summary
+    const counts={};Object.values(dayData).forEach(v=>{if(typeof v==='string'&&v.length<=3)counts[v]=(counts[v]||0)+1;});
+    h+='<div class="stat-grid" style="margin-top:12px">';
+    h+='<div class="stat-card success"><div class="stat-num">'+(counts['出勤']||0)+'</div><div class="stat-label">出勤</div></div>';
+    h+='<div class="stat-card warn"><div class="stat-num">'+(counts['迟到']||0)+'</div><div class="stat-label">迟到</div></div>';
+    h+='<div class="stat-card danger"><div class="stat-num">'+(counts['缺勤']||0)+'</div><div class="stat-label">缺勤</div></div>';
+    h+='<div class="stat-card"><div class="stat-num">'+(counts['请假']||0)+'</div><div class="stat-label">请假</div></div></div>';
+  }
+  // Leave requests
+  h+='<div class="card"><div class="card-header"><h3>📝 请假记录</h3></div>';
+  if(data.leaveRequests.length===0)h+='<p>暂无请假记录</p>';
+  else h+='<div class="table-wrap"><table><thead><tr><th>学生</th><th>日期</th><th>原因</th><th>状态</th><th>操作</th></tr></thead><tbody>'+data.leaveRequests.map(l=>'<tr><td>'+esc(getStudentName(l.studentId))+'</td><td>'+esc(l.date)+'</td><td>'+esc(l.reason)+'</td><td><span class="tag tag-yellow">'+esc(l.status||'待审批')+'</span></td><td><button class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="deleteLeave(\''+l.id+'\')">删除</button></td></tr>').join('')+'</tbody></table></div>';
+  h+='</div>';
+  $('mainContent').innerHTML=h;
+}
+function updateAttendance(date,sid,status){if(!data.attendance[date])data.attendance[date]={};data.attendance[date][sid]=status;saveData();}
+function quickAttendance(){
+  const today=now();if(!data.attendance[today])data.attendance[today]={};
+  data.students.forEach(s=>{if(!data.attendance[today][s.id])data.attendance[today][s.id]='出勤';});
+  saveData();renderAttendance();toast('已标记全部出勤','success');
+}
+function addLeaveRequest(){
+  const m=$('modalContent');let h='<h3>请假登记</h3>';
+  h+='<div class="form-group"><label>学生</label>'+studentSelectHTML('leaveStu','')+'</div>';
+  h+='<div class="form-row"><div class="form-group"><label>开始日期</label><input type="date" id="leaveStart" value="'+now()+'"></div><div class="form-group"><label>结束日期</label><input type="date" id="leaveEnd" value="'+now()+'"></div></div>';
+  h+='<div class="form-group"><label>请假原因</label><textarea id="leaveReason" style="width:100%"></textarea></div>';
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="saveLeaveRequest()">保存</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function saveLeaveRequest(){
+  const sid=leaveStu_select?$('leaveStu_select').value:'';
+  if(!sid){toast('请选择学生','error');return;}
+  data.leaveRequests.push({id:uid(),studentId:sid,date:$('leaveStart').value+' ~ '+$('leaveEnd').value,reason:$('leaveReason').value,status:'待审批'});
+  saveData();closeModal();renderAttendance();toast('请假已登记','success');
+}
+function deleteLeave(id){data.leaveRequests=data.leaveRequests.filter(l=>l.id!==id);saveData();renderAttendance();}
+
+// ===== GRADES =====
+function renderGrades(){
+  let h='<div class="page-header"><h1>📝 成绩管理</h1><div class="btn-group"><button class="btn btn-primary" onclick="addExam()">+ 添加考试</button><button class="btn btn-outline" onclick="showGradeAnalysis()">📊 成绩分析</button></div></div>';
+  const examNames=Object.keys(data.grades).sort().reverse();
+  examNames.forEach(en=>{
+    const exam=data.grades[en];
+    const subjects=exam._subjects||['语文','数学','英语'];
+    h+='<div class="card"><div class="card-header"><h3>📄 '+esc(en)+'</h3><div class="btn-group"><button class="btn btn-sm btn-outline" onclick="inputExamGrades(\''+esc(en)+'\')">录入成绩</button><button class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="if(confirm(\'删除考试 '+esc(en)+'？\')){delete data.grades[\''+esc(en)+'\'];saveData();renderAll();}">删除</button></div></div>';
+    // Quick stats per subject
+    h+='<div class="stat-grid" style="margin-bottom:12px">';
+    subjects.forEach(subj=>{
+      const scores=data.students.filter(s=>exam[s.id]&&exam[s.id][subj]!=null).map(s=>parseFloat(exam[s.id][subj])).filter(v=>!isNaN(v));
+      if(scores.length>0){
+        const avg=Math.round(scores.reduce((a,b)=>a+b,0)/scores.length*10)/10;
+        const max=Math.max(...scores);const min=Math.min(...scores);
+        h+='<div class="stat-card"><div class="stat-label">'+esc(subj)+' (均/最高/最低)</div><div class="stat-num" style="font-size:1rem">'+avg+' / '+max+' / '+min+'</div></div>';
+      }
+    });
+    h+='</div>';
+    // Scores table
+    h+='<div class="table-wrap"><table><thead><tr><th>姓名</th>';
+    subjects.forEach(s=>h+='<th>'+esc(s)+'</th>');
+    h+='<th>总分</th></tr></thead><tbody>';
+    data.students.forEach(s=>{
+      const ss=exam[s.id]||{};
+      const scores=subjects.map(subj=>parseFloat(ss[subj])).filter(v=>!isNaN(v));
+      const total=scores.length>0?Math.round(scores.reduce((a,b)=>a+b,0)*10)/10:'';
+      h+='<tr><td>'+esc(s.name)+'</td>';
+      subjects.forEach(subj=>h+='<td>'+(ss[subj]!=null?ss[subj]:'-')+'</td>');
+      h+='<td style="font-weight:600">'+total+'</td></tr>';
+    });
+    h+='</tbody></table></div></div>';
+  });
+  if(examNames.length===0)h+='<div class="card"><p class="empty-state">暂无考试记录，点击上方按钮添加</p></div>';
+  $('mainContent').innerHTML=h;
+}
+function addExam(){
+  const name=prompt('请输入考试名称（如：期中考试、月考1）：');
+  if(!name||!name.trim())return;
+  if(data.grades[name]){toast('考试名称已存在','error');return;}
+  data.grades[name]={_subjects:['语文','数学','英语']};saveData();renderAll();toast('考试添加成功','success');
+}
+function inputExamGrades(en){
+  const exam=data.grades[en];const subjects=exam._subjects||['语文','数学','英语'];
+  const m=$('modalContent');let h='<h3>录入成绩 - '+esc(en)+'</h3>';
+  h+='<div class="table-wrap" style="max-height:60vh"><table><thead><tr><th>姓名</th>';
+  subjects.forEach(s=>h+='<th>'+esc(s)+'</th>');
+  h+='</tr></thead><tbody>';
+  data.students.forEach(s=>{
+    const ss=exam[s.id]||{};
+    h+='<tr><td>'+esc(s.name)+'</td>';
+    subjects.forEach(subj=>h+='<td><input type="number" step="0.5" value="'+(ss[subj]!=null?ss[subj]:'')+'" id="grade_'+s.id+'_'+subj.replace(/[^a-zA-Z\u4e00-\u9fa5]/g,'_')+'" style="width:80px" onchange="saveGrade(\''+en+'\',\''+s.id+'\',\''+subj+'\',this.value)"></td>');
+    h+='</tr>';
+  });
+  h+='</tbody></table></div>';
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal();renderGrades()">关闭</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function saveGrade(en,sid,subj,val){
+  if(!data.grades[en])data.grades[en]={};
+  if(!data.grades[en][sid])data.grades[en][sid]={};
+  data.grades[en][sid][subj]=val?parseFloat(val):null;
+  saveData();
+}
+function showGradeAnalysis(){
+  const m=$('modalContent');
+  const examNames=Object.keys(data.grades).sort();
+  if(examNames.length<2){m.innerHTML='<h3>成绩分析</h3><p>需要至少两次考试数据才能进行分析</p><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">关闭</button></div>';$('modalOverlay').classList.add('active');return;}
+  let h='<h3>📊 成绩动态分析</h3>';
+  // Select exams and subject
+  h+='<div class="form-row" style="margin-bottom:12px"><div class="form-group"><label>选择考试范围</label><div>'+examNames.map(n=>'<label style="display:inline-block;margin-right:8px"><input type="checkbox" value="'+esc(n)+'" checked class="analysis-exam"> '+esc(n)+'</label>').join('')+'</div></div></div>';
+  h+='<div class="form-group"><label>分析科目</label><select id="analysisSubject"><option value="总分">总分</option>'+['语文','数学','英语'].map(s=>'<option>'+s+'</option>').join('')+'</select></div>';
+  h+='<button class="btn btn-primary" onclick="runGradeAnalysis()">分析</button>';
+  h+='<div id="analysisResult" style="margin-top:16px"></div>';
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">关闭</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function runGradeAnalysis(){
+  const selectedExams=Array.from(document.querySelectorAll('.analysis-exam:checked')).map(x=>x.value).sort();
+  const subject=$('analysisSubject').value;
+  if(selectedExams.length<2){toast('请至少选择两次考试','error');return;}
+  let result='<h4>📈 班级平均分变化</h4><div class="chart-wrap"><canvas id="classAvgChart"></canvas></div>';
+  result+='<h4 style="margin-top:16px">🔍 成绩波动分析</h4>';
+  const scoresByStudent={};
+  data.students.forEach(s=>{
+    const scores=[];
+    selectedExams.forEach(en=>{
+      const g=data.grades[en];if(!g||!g[s.id]){scores.push(null);return;}
+      if(subject==='总分'){
+        const subs=(data.grades[en]._subjects||['语文','数学','英语']);
+        const vals=subs.map(sb=>parseFloat(g[s.id][sb])).filter(v=>!isNaN(v));
+        scores.push(vals.length>0?Math.round(vals.reduce((a,b)=>a+b,0)*10)/10:null);
+      }else{scores.push(parseFloat(g[s.id][subject])||null);}
+    });
+    scoresByStudent[s.id]={name:s.name,scores};
+  });
+  // Find volatile students
+  let volatileStudents=[];
+  Object.entries(scoresByStudent).forEach(([sid,info])=>{
+    const validScores=info.scores.filter(v=>v!=null);
+    if(validScores.length<2)return;
+    const avg=validScores.reduce((a,b)=>a+b,0)/validScores.length;
+    const maxDiff=Math.max(...validScores)-Math.min(...validScores);
+    const last=validScores[validScores.length-1];
+    const first=validScores[0];
+    const trend=last-first;
+    volatileStudents.push({sid,name:info.name,range:maxDiff,trend,first,last});
+  });
+  volatileStudents.sort((a,b)=>b.range-a.range);
+  result+='<p style="margin:8px 0"><strong>成绩波动较大学生（按波动幅度排名）：</strong></p>';
+  result+='<div class="table-wrap"><table><thead><tr><th>排名</th><th>姓名</th><th>波动幅度</th><th>趋势</th></tr></thead><tbody>';
+  volatileStudents.slice(0,15).forEach((v,i)=>{
+    result+='<tr><td>'+(i+1)+'</td><td>'+esc(v.name)+'</td><td>'+Math.round(v.range*10)/10+'分</td><td><span style="color:'+(v.trend>0?'var(--success)':'var(--danger)')+'">'+(v.trend>0?'↑上升'+Math.round(v.trend*10)/10:'↓下降'+Math.round(Math.abs(v.trend)*10)/10)+'</span></td></tr>';
+  });
+  result+='</tbody></table></div>';
+  // Progress ranking
+  result+='<h4 style="margin-top:16px">🚀 进步学生榜</h4>';
+  const progressStudents=[...volatileStudents].filter(v=>v.trend>0).sort((a,b)=>b.trend-a.trend);
+  result+='<ol class="rank-list">'+progressStudents.slice(0,10).map((v,i)=>'<li class="rank-item"><span class="rank-num '+(i===0?'gold':i===1?'silver':i===2?'bronze':'')+'">'+(i+1)+'</span> '+esc(v.name)+' <span style="color:var(--success);font-weight:600">+'+Math.round(v.trend*10)/10+'分</span></li>').join('')+'</ol>';
+  // Decline warning
+  result+='<h4 style="margin-top:16px">⚠️ 退步学生预警</h4>';
+  const declineStudents=[...volatileStudents].filter(v=>v.trend<0).sort((a,b)=>a.trend-b.trend);
+  result+='<ol class="rank-list">'+declineStudents.slice(0,10).map((v,i)=>'<li class="rank-item"><span class="rank-num '+(i===0?'gold':i===1?'silver':i===2?'bronze':'')+'">'+(i+1)+'</span> '+esc(v.name)+' <span style="color:var(--danger);font-weight:600">'+Math.round(v.trend*10)/10+'分</span></li>').join('')+'</ol>';
+  $('analysisResult').innerHTML=result;
+  // Draw chart
+  setTimeout(()=>{
+    if(!_chartReady||typeof Chart==='undefined')return;
+    const ctx=document.getElementById('classAvgChart');if(!ctx)return;
+    if(charts.classAvg)charts.classAvg.destroy();
+    const avgByExam=selectedExams.map(en=>{
+      const g=data.grades[en];if(!g)return 0;
+      const vals=data.students.map(s=>{
+        if(!g[s.id])return null;
+        if(subject==='总分'){const subs=(g._subjects||['语文','数学','英语']);const scores=subs.map(sb=>parseFloat(g[s.id][sb])).filter(v=>!isNaN(v));return scores.length>0?Math.round(scores.reduce((a,b)=>a+b,0)*10)/10:null;}
+        else{const v=parseFloat(g[s.id][subject]);return isNaN(v)?null:v;}
+      }).filter(v=>v!=null);
+      return vals.length>0?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length*10)/10:0;
+    });
+    charts.classAvg=new Chart(ctx,{type:'line',data:{labels:selectedExams,datasets:[{label:'班级平均分',data:avgByExam,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:'#3b82f6'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+  },100);
+}
+
+// ===== HONORS & DISCIPLINE =====
+function renderHonors(){
+  currentSubModule=currentSubModule||'class';
+  let h='<div class="page-header"><h1>🏆 荣誉与处分</h1></div>';
+  h+='<div class="sub-tabs"><div class="sub-tab'+(currentSubModule==='class'?' active':'')+'" onclick="currentSubModule=\'class\';renderHonors()">班级荣誉</div><div class="sub-tab'+(currentSubModule==='student'?' active':'')+'" onclick="currentSubModule=\'student\';renderHonors()">个人荣誉</div><div class="sub-tab'+(currentSubModule==='discipline'?' active':'')+'" onclick="currentSubModule=\'discipline\';renderHonors()">个人处分</div><div class="sub-tab'+(currentSubModule==='violation'?' active':'')+'" onclick="currentSubModule=\'violation\';renderHonors()">违纪统计</div></div>';
+  if(currentSubModule==='class'){
+    h+='<div class="btn-group" style="margin-bottom:12px"><button class="btn btn-primary" onclick="addHonor(\'class\')">+ 班级荣誉</button></div>';
+    if(data.honors.class.length===0)h+='<p class="empty-state">暂无班级荣誉</p>';
+    else data.honors.class.forEach(item=>{
+      h+='<div class="card"><div class="card-header"><h3>'+esc(item.name)+'</h3><div class="btn-group"><button class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="deleteHonor(\'class\',\''+item.id+'\')">删除</button></div></div><p>📅 '+esc(item.date)+' | '+esc(item.detail||'')+'</p></div>';
+    });
+  }else if(currentSubModule==='student'){
+    h+='<div class="btn-group" style="margin-bottom:12px"><button class="btn btn-primary" onclick="addHonor(\'student\')">+ 个人荣誉</button></div>';
+    const filter=$('honorStuFilter')?$('honorStuFilter').value:'';
+    h+='<div style="margin-bottom:12px">'+studentSelectHTML('honorStuFilter',filter)+' <button class="btn btn-sm btn-outline" onclick="renderHonors()">筛选</button></div>';
+    let items=data.honors.student;
+    if(filter)items=items.filter(i=>i.studentId===filter);
+    if(items.length===0)h+='<p class="empty-state">暂无个人荣誉</p>';
+    else items.forEach(item=>{
+      h+='<div class="card"><div class="card-header"><h3>'+esc(item.name)+'</h3><div class="btn-group"><button class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="deleteHonor(\'student\',\''+item.id+'\')">删除</button></div></div><p>👤 '+esc(getStudentName(item.studentId))+' | 📅 '+esc(item.date)+' | '+esc(item.detail||'')+'</p></div>';
+    });
+  }else if(currentSubModule==='discipline'){
+    h+='<div class="btn-group" style="margin-bottom:12px"><button class="btn btn-primary" onclick="addHonor(\'discipline\')">+ 个人处分</button></div>';
+    if(data.honors.discipline.length===0)h+='<p class="empty-state">暂无处分记录</p>';
+    else data.honors.discipline.forEach(item=>{
+      h+='<div class="card"><div class="card-header"><h3><span class="tag tag-red">'+esc(item.type||'处分')+'</span></h3><div class="btn-group"><button class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="deleteHonor(\'discipline\',\''+item.id+'\')">删除</button></div></div><p>👤 '+esc(getStudentName(item.studentId))+' | 📅 '+esc(item.date)+' | '+esc(item.reason||'')+'</p></div>';
+    });
+  }else if(currentSubModule==='violation'){
+    h+='<div class="btn-group" style="margin-bottom:12px"><button class="btn btn-primary" onclick="addHonor(\'violation\')">+ 违纪记录</button></div>';
+    const types=['迟到','早退','旷课','校级处分','级部处分','班级处分'];
+    h+='<div class="card"><h3>📊 违纪统计</h3><div class="stat-grid">';
+    types.forEach(t=>{
+      const cnt=data.honors.discipline.filter(d=>d.type===t).length;
+      h+='<div class="stat-card danger"><div class="stat-num">'+cnt+'</div><div class="stat-label">'+t+'</div></div>';
+    });
+    h+='</div></div>';
+    h+='<div class="card"><h3>📋 违纪明细</h3><div class="table-wrap"><table><thead><tr><th>学生</th><th>类型</th><th>日期</th><th>原因</th><th>操作</th></tr></thead><tbody>';
+    const disc=data.honors.discipline.sort((a,b)=>b.date.localeCompare(a.date));
+    if(disc.length===0)h+='<tr><td colspan="5" class="empty-state">暂无违纪记录</td></tr>';
+    else disc.forEach(d=>{h+='<tr><td>'+esc(getStudentName(d.studentId))+'</td><td><span class="tag tag-red">'+esc(d.type||'')+'</span></td><td>'+esc(d.date)+'</td><td>'+esc(d.reason||'')+'</td><td><button class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="deleteHonor(\'discipline\',\''+d.id+'\')">删除</button></td></tr>';});
+    h+='</tbody></table></div></div>';
+  }
+  $('mainContent').innerHTML=h;
+}
+function addHonor(type){
+  const m=$('modalContent');let h='<h3>添加'+(type==='class'?'班级荣誉':type==='student'?'个人荣誉':type==='discipline'?'个人处分':'违纪记录')+'</h3>';
+  h+='<div class="form-group"><label>名称</label><input id="honorName"></div>';
+  h+='<div class="form-group"><label>日期</label><input type="date" id="honorDate" value="'+now()+'"></div>';
+  if(type!=='class')h+='<div class="form-group"><label>学生</label>'+studentSelectHTML('honorStu','')+'</div>';
+  if(type==='discipline'||type==='violation'){
+    h+='<div class="form-group"><label>违纪类型</label><select id="honorType"><option>迟到</option><option>早退</option><option>旷课</option><option>校级处分</option><option>级部处分</option><option>班级处分</option></select></div>';
+    h+='<div class="form-group"><label>原因</label><textarea id="honorReason" style="width:100%"></textarea></div>';
+  }else{
+    h+='<div class="form-group"><label>详情</label><textarea id="honorDetail" style="width:100%"></textarea></div>';
+  }
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="saveHonor(\''+type+'\')">保存</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function saveHonor(type){
+  const item={id:uid(),name:$('honorName')?$('honorName').value:'',date:$('honorDate')?$('honorDate').value:now()};
+  if(type==='discipline'||type==='violation'){item.type=$('honorType')?$('honorType').value:'班级处分';item.reason=$('honorReason')?$('honorReason').value:'';item.studentId=$('honorStu_select')?$('honorStu_select').value:'';}
+  else{item.detail=$('honorDetail')?$('honorDetail').value:'';if(type==='student')item.studentId=$('honorStu_select')?$('honorStu_select').value:'';}
+  if(type==='class')data.honors.class.push(item);
+  else if(type==='student')data.honors.student.push(item);
+  else data.honors.discipline.push(item);
+  saveData();closeModal();renderHonors();toast('已保存','success');
+}
+function deleteHonor(type,id){
+  if(type==='class')data.honors.class=data.honors.class.filter(x=>x.id!==id);
+  else if(type==='student')data.honors.student=data.honors.student.filter(x=>x.id!==id);
+  else data.honors.discipline=data.honors.discipline.filter(x=>x.id!==id);
+  saveData();renderHonors();
+}
+
+// ===== POINTS =====
+function renderPoints(){
+  let h='<div class="page-header"><h1>⭐ 加减分管理</h1><div class="btn-group"><button class="btn btn-primary" onclick="addPoint()">+ 加减分</button><button class="btn btn-outline" onclick="showPointsRanking()">📊 排行榜</button></div></div>';
+  // Top 10
+  const totals={};
+  data.points.forEach(p=>{totals[p.studentId]=(totals[p.studentId]||0)+p.value;});
+  const sorted=Object.entries(totals).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  if(sorted.length>0){
+    h+='<div class="card"><div class="card-header"><h3>🏆 积分排行榜 TOP10</h3></div>';
+    h+='<ol class="rank-list">'+sorted.map(([sid,val],i)=>'<li class="rank-item"><span class="rank-num '+(i===0?'gold':i===1?'silver':i===2?'bronze':'')+'">'+(i+1)+'</span><span>'+esc(getStudentName(sid))+'</span><span style="margin-left:auto;font-weight:700;color:'+(val>=0?'var(--success)':'var(--danger)')+'">'+(val>0?'+':'')+val+'分</span></li>').join('')+'</ol></div>';
+  }
+  // Group points
+  if(data.groups.length>0){
+    h+='<div class="card"><div class="card-header"><h3>👨‍👩‍👧‍👦 小组积分排行</h3><div class="btn-group"><button class="btn btn-sm btn-outline" onclick="showGroupPointsChart()">📊 对比图</button></div></div>';
+    const groupPoints={};
+    data.groups.forEach(g=>{groupPoints[g.name]=0;g.members.forEach(mid=>{groupPoints[g.name]+=(totals[mid]||0);});});
+    const groupSorted=Object.entries(groupPoints).sort((a,b)=>b[1]-a[1]);
+    h+='<ol class="rank-list">'+groupSorted.map(([name,val],i)=>'<li class="rank-item"><span class="rank-num '+(i===0?'gold':i===1?'silver':i===2?'bronze':'')+'">'+(i+1)+'</span><span>'+esc(name)+'</span><span style="margin-left:auto;font-weight:700;color:'+(val>=0?'var(--success)':'var(--danger)')+'">'+(val>0?'+':'')+val+'分</span></li>').join('')+'</ol></div>';
+  }
+  // Records
+  h+='<div class="card"><div class="card-header"><h3>📋 加减分记录</h3><label>学生筛选：'+studentSelectHTML('ptFilter','')+'<button class="btn btn-sm btn-outline" onclick="renderPoints()">筛选</button></label></div>';
+  let recs=[...data.points].sort((a,b)=>b.date.localeCompare(a.date));
+  const ptFilter=$('ptFilter_select')?$('ptFilter_select').value:'';
+  if(ptFilter)recs=recs.filter(p=>p.studentId===ptFilter);
+  if(recs.length===0)h+='<p class="empty-state">暂无加减分记录</p>';
+  else h+='<div class="table-wrap"><table><thead><tr><th>学生</th><th>分值</th><th>原因</th><th>日期</th><th>操作</th></tr></thead><tbody>'+recs.map(p=>'<tr><td>'+esc(getStudentName(p.studentId))+'</td><td style="color:'+(p.value>0?'var(--success)':'var(--danger)')+';font-weight:600">'+(p.value>0?'+':'')+p.value+'</td><td>'+esc(p.reason||'')+'</td><td>'+fmtFull(p.date)+'</td><td><button class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="deletePoint(\''+p.id+'\')">删除</button></td></tr>').join('')+'</tbody></table></div>';
+  h+='</div>';
+  $('mainContent').innerHTML=h;
+}
+function addPoint(){
+  const m=$('modalContent');let h='<h3>加减分</h3>';
+  h+='<div class="form-group"><label>学生</label>'+studentSelectHTML('ptStu','')+'</div>';
+  h+='<div class="form-row"><div class="form-group"><label>类型</label><select id="ptType"><option value="1">加分</option><option value="-1">扣分</option></select></div><div class="form-group"><label>分值</label><input type="number" id="ptValue" value="1" min="1"></div></div>';
+  h+='<div class="form-group"><label>日期</label><input type="date" id="ptDate" value="'+now()+'"></div>';
+  h+='<div class="form-group"><label>原因</label><input id="ptReason" style="width:100%" placeholder="如：课堂表现优秀">';
+  if(data.groups.length>0)h+='<div class="form-group"><label>计入小组</label><select id="ptGroup"><option value="">不计入</option>'+data.groups.map(g=>'<option value="'+esc(g.name)+'">'+esc(g.name)+'</option>').join('')+'</select></div>';
+  h+='</div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="savePoint()">保存</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function savePoint(){
+  const sid=$('ptStu_select')?$('ptStu_select').value:'';
+  if(!sid){toast('请选择学生','error');return;}
+  const type=parseInt($('ptType').value);
+  const val=parseInt($('ptValue').value);
+  data.points.push({id:uid(),studentId:sid,value:type*val,reason:$('ptReason')?$('ptReason').value:'',date:$('ptDate')?$('ptDate').value:now(),groupName:($('ptGroup')?$('ptGroup').value:'')});
+  saveData();closeModal();renderPoints();toast('加分记录已保存','success');
+}
+function deletePoint(id){data.points=data.points.filter(p=>p.id!==id);saveData();renderPoints();}
+function showPointsRanking(){
+  const m=$('modalContent');
+  const totals={};
+  data.points.forEach(p=>{totals[p.studentId]=(totals[p.studentId]||0)+p.value;});
+  const sorted=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+  let h='<h3>🏆 积分排行 TOP20</h3>';
+  h+='<ol class="rank-list">'+sorted.slice(0,20).map(([sid,val],i)=>'<li class="rank-item"><span class="rank-num '+(i===0?'gold':i===1?'silver':i===2?'bronze':'')+'">'+(i+1)+'</span><span>'+esc(getStudentName(sid))+'</span><span style="margin-left:auto;font-weight:700;color:'+(val>=0?'var(--success)':'var(--danger)')+'">'+(val>0?'+':'')+val+'分</span><div class="progress-bar" style="width:120px"><div class="progress-fill" style="width:'+Math.min(100,(val/sorted[0][1])*100)+'%;background:'+(val>=0?'var(--success)':'var(--danger)')+'"></div></div></li>').join('')+'</ol>';
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">关闭</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function showGroupPointsChart(){
+  const m=$('modalContent');
+  const totals={};
+  data.points.forEach(p=>{totals[p.studentId]=(totals[p.studentId]||0)+p.value;});
+  const gps={};
+  data.groups.forEach(g=>{gps[g.name]=0;g.members.forEach(mid=>{gps[g.name]+=(totals[mid]||0);});});
+  let h='<h3>📊 小组积分对比</h3><div class="chart-wrap" style="height:300px"><canvas id="groupPtChart"></canvas></div>';
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">关闭</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+  setTimeout(()=>{
+    if(!_chartReady||typeof Chart==='undefined')return;
+    const ctx=document.getElementById('groupPtChart');if(!ctx)return;
+    if(charts.groupPt)charts.groupPt.destroy();
+    const labels=Object.keys(gps);const values=Object.values(gps);
+    const colors=['#ef4444','#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316','#6366f1'];
+    charts.groupPt=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'小组总积分',data:values,backgroundColor:labels.map((_,i)=>colors[i%colors.length]+'99'),borderColor:labels.map((_,i)=>colors[i%colors.length]),borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+  },100);
+}
+
+
+// ===== CLEANING =====
+function renderCleaning(){
+  if(!data.cleaning.areas||data.cleaning.areas.length===0)data.cleaning.areas=['教室地面','黑板','讲台','走廊','卫生区','窗台'];
+  if(!activeCleaningWeek)activeCleaningWeek='week_'+Math.ceil((new Date()-new Date(new Date().getFullYear(),0,1))/604800000);
+  if(!data.cleaning.schedule[activeCleaningWeek])data.cleaning.schedule[activeCleaningWeek]={};
+  const week=data.cleaning.schedule[activeCleaningWeek];
+  const weekNum=activeCleaningWeek.replace('week_','');
+  let h='<div class="page-header"><h1>🧹 卫生安排表</h1><div class="btn-group"><button class="btn btn-primary" onclick="editCleaningAreas()">设置值日区域</button><button class="btn btn-outline" onclick="autoAssignCleaning()">自动安排值日</button></div></div>';
+  h+='<div class="week-selector"><button onclick="changeCleaningWeek(-1)">◀ 上周</button><span style="font-weight:600">第 '+weekNum+' 周</span><button onclick="changeCleaningWeek(1)">下周 ▶</button></div>';
+  h+='<div class="card"><div class="table-wrap"><table><thead><tr><th>值日区域</th><th>周一</th><th>周二</th><th>周三</th><th>周四</th><th>周五</th></tr></thead><tbody>';
+  data.cleaning.areas.forEach(area=>{
+    h+='<tr><td style="font-weight:600">'+esc(area)+'</td>';
+    ['monday','tuesday','wednesday','thursday','friday'].forEach(day=>{
+      const key=area+'_'+day;const val=week[key]||'';
+      h+='<td><input value="'+esc(val)+'" onchange="updateCleaning(\''+key+'\',this.value)" style="width:100%;border:none;background:transparent;padding:4px" placeholder="安排人员"></td>';
+    });
+    h+='</tr>';
+  });
+  h+='</tbody></table></div></div>';
+  $('mainContent').innerHTML=h;
+}
+function changeCleaningWeek(delta){const wk=parseInt(activeCleaningWeek.replace('week_',''));activeCleaningWeek='week_'+(wk+delta);if(!data.cleaning.schedule[activeCleaningWeek])data.cleaning.schedule[activeCleaningWeek]={};renderCleaning();}
+function updateCleaning(key,val){data.cleaning.schedule[activeCleaningWeek][key]=val;saveData();}
+function deleteCleaningArea(area){data.cleaning.areas=data.cleaning.areas.filter(a=>a!==area);Object.keys(data.cleaning.schedule).forEach(wk=>{Object.keys(data.cleaning.schedule[wk]).forEach(k=>{if(k.startsWith(area+'_'))delete data.cleaning.schedule[wk][k];});});saveData();renderCleaning();}
+function editCleaningAreas(){
+  const m=$('modalContent');let h='<h3>管理值日区域</h3>';
+  h+='<div style="margin-bottom:12px"><input id="newArea" placeholder="新增区域名称..."><button class="btn btn-primary btn-sm" onclick="addCleaningArea()">+ 添加</button></div>';
+  h+='<div>'+data.cleaning.areas.map(a=>'<div style="padding:8px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between"><span>'+esc(a)+'</span><button class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="deleteCleaningArea(\''+esc(a)+'\');closeModal();renderCleaning();">删除</button></div>').join('')+'</div>';
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">关闭</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function addCleaningArea(){const name=$('newArea').value;if(!name){toast('请输入区域名称','error');return;}data.cleaning.areas.push(name);saveData();closeModal();renderCleaning();}
+function autoAssignCleaning(){
+  if(data.students.length===0){toast('请先添加学生','error');return;}
+  const week=data.cleaning.schedule[activeCleaningWeek];
+  ['monday','tuesday','wednesday','thursday','friday'].forEach(day=>{
+    const shuffled=[...data.students].sort(()=>Math.random()-0.5);
+    data.cleaning.areas.forEach((area,i)=>{
+      const key=area+'_'+day;
+      if(!week[key])week[key]=shuffled[i%shuffled.length].name;
+    });
+  });
+  saveData();renderCleaning();toast('已自动分配值日','success');
+}
+
+// ===== COMMITTEE =====
+function renderCommittee(){
+  let h='<div class="page-header"><h1>🏅 班委管理</h1><button class="btn btn-primary" onclick="editCommittee(null)">+ 添加班委</button></div>';
+  if(data.committee.length===0)h+='<div class="card"><p class="empty-state">暂未设置班委</p></div>';
+  else{
+    data.committee.forEach(c=>{
+      h+='<div class="card"><div class="card-header"><h3>'+esc(c.role)+'</h3><div class="btn-group"><button class="btn btn-sm btn-outline" onclick="editCommittee(\''+c.id+'\')">编辑</button><button class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="if(confirm(\'删除 '+esc(c.role)+'？\')){data.committee=data.committee.filter(x=>x.id!==\''+c.id+'\');saveData();renderAll();}">删除</button></div></div>';
+      h+='<p><strong>担任学生：</strong><span class="student-link" onclick="showStudentDetail(\''+esc(c.studentId)+'\')">'+esc(getStudentName(c.studentId))+'</span></p>';
+      h+='<p><strong>职责说明：</strong>'+esc(c.description||'未填写')+'</p></div>';
+    });
+  }
+  $('mainContent').innerHTML=h;
+}
+function editCommittee(cid){
+  const c=cid?data.committee.find(x=>x.id===cid):{};
+  const m=$('modalContent');let h='<h3>'+(cid?'编辑班委':'添加班委')+'</h3>';
+  h+='<div class="form-group"><label>职务名称</label><input id="crole" value="'+esc(c.role||'')+'" placeholder="如：班长、学习委员、数学课代表..."></div>';
+  h+='<div class="form-group"><label>担任学生</label>'+studentSelectHTML('cstudent',c.studentId||'')+'</div>';
+  h+='<div class="form-group"><label>职责说明</label><textarea id="cdesc" style="width:100%">'+esc(c.description||'')+'</textarea></div>';
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="saveCommittee(\''+(cid||'')+'\')">保存</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function saveCommittee(cid){
+  const item={id:cid||uid(),role:$('crole').value,studentId:$('cstudent_select').value,description:$('cdesc').value};
+  if(!item.role||!item.studentId){toast('请填写职务名称并选择学生','error');return;}
+  if(cid){const idx=data.committee.findIndex(x=>x.id===cid);if(idx>=0)data.committee[idx]=item;}
+  else data.committee.push(item);
+  saveData();closeModal();renderAll();toast('班委已保存','success');
+}
+
+// ===== HOMEWORK =====
+function renderHomework(){
+  let h='<div class="page-header"><h1>📖 作业管理</h1><div class="btn-group"><button class="btn btn-primary" onclick="addHomework()">+ 布置作业</button><button class="btn btn-outline" onclick="generateHWReport()">📊 周作业分析报告</button></div></div>';
+  const hws=[...(data.homework.assignments||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  hws.forEach(hw=>{
+    const recs=data.homework.records[hw.id]||{};
+    const gradeCounts={};
+    Object.values(recs).forEach(g=>{gradeCounts[g]=(gradeCounts[g]||0)+1;});
+    h+='<div class="card"><div class="card-header"><h3>'+esc(hw.subject)+' - '+esc(hw.title)+'</h3><div class="btn-group"><span style="font-size:0.8rem;color:var(--text-secondary)">📅 '+esc(hw.date)+' | 截止：'+esc(hw.deadline)+'</span><button class="btn btn-sm btn-outline" onclick="gradeHomework(\''+hw.id+'\')">📝 评定等级</button><button class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="deleteHomework(\''+hw.id+'\')">删除</button></div></div>';
+    h+='<div style="margin:8px 0">'+Object.entries(gradeCounts).map(([g,c])=>'<span class="grade-badge grade-'+g.toLowerCase().replace('+','-plus')+'">'+g+': '+c+'人</span>').join(' ')+'</div></div>';
+  });
+  if(hws.length===0)h+='<div class="card"><p class="empty-state">暂无作业</p></div>';
+  $('mainContent').innerHTML=h;
+}
+function addHomework(){
+  const m=$('modalContent');let h='<h3>布置作业</h3>';
+  h+='<div class="form-row"><div class="form-group"><label>科目</label><select id="hwSubject"><option>语文</option><option>数学</option><option>英语</option><option>科学</option><option>道德与法治</option><option>其他</option></select></div><div class="form-group"><label>日期</label><input type="date" id="hwDate" value="'+now()+'"></div></div>';
+  h+='<div class="form-group"><label>作业内容</label><textarea id="hwTitle" style="width:100%" placeholder="作业内容和要求..."></textarea></div>';
+  h+='<div class="form-group"><label>截止日期</label><input type="date" id="hwDeadline" value="'+now()+'"></div>';
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="saveHomework()">保存</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function saveHomework(){
+  const hw={id:uid(),subject:$('hwSubject').value,title:$('hwTitle').value,date:$('hwDate').value,deadline:$('hwDeadline').value};
+  if(!hw.title){toast('请输入作业内容','error');return;}
+  data.homework.assignments.push(hw);data.homework.records[hw.id]={};
+  saveData();closeModal();renderAll();toast('作业已布置','success');
+}
+function deleteHomework(hwid){
+  data.homework.assignments=data.homework.assignments.filter(x=>x.id!==hwid);
+  delete data.homework.records[hwid];
+  saveData();renderAll();
+}
+function gradeHomework(hwid){
+  const hw=data.homework.assignments.find(x=>x.id===hwid);if(!hw)return;
+  const recs=data.homework.records[hwid]||{};
+  const m=$('modalContent');let h='<h3>评定等级 - '+esc(hw.title)+'</h3>';
+  const grades=['A+','A','B+','B','C'];
+  h+='<div class="table-wrap" style="max-height:60vh"><table><thead><tr><th>姓名</th><th>等级</th></tr></thead><tbody>';
+  data.students.forEach(s=>{
+    h+='<tr><td>'+esc(s.name)+'</td><td><select class="grade-select" onchange="saveHWGrade(\''+hwid+'\',\''+s.id+'\',this.value)"><option value="">未评定</option>';
+    grades.forEach(g=>{h+='<option value="'+g+'"'+(recs[s.id]===g?' selected':'')+'>'+g+'</option>';});
+    h+='</select></td></tr>';
+  });
+  h+='</tbody></table></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal();renderAll()">完成</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function saveHWGrade(hwid,sid,grade){if(!data.homework.records[hwid])data.homework.records[hwid]={};data.homework.records[hwid][sid]=grade||null;saveData();}
+function generateHWReport(){
+  const hws=data.homework.assignments.filter(hw=>{const d=new Date(hw.date);const weekAgo=new Date();weekAgo.setDate(weekAgo.getDate()-7);return d>=weekAgo;});
+  if(hws.length===0){toast('近一周没有作业记录','error');return;}
+  const allGrades={};const studentGrades={};
+  hws.forEach(hw=>{const recs=data.homework.records[hw.id]||{};Object.entries(recs).forEach(([sid,g])=>{if(g){allGrades[g]=(allGrades[g]||0)+1;studentGrades[sid]=studentGrades[sid]||{};studentGrades[sid][g]=(studentGrades[sid][g]||0)+1;}});});
+  const total=Object.values(allGrades).reduce((a,b)=>a+b,0);
+  let goodStudents=[],needHelp=[];
+  Object.entries(studentGrades).forEach(([sid,gs])=>{const good=(gs['A+']||0)+(gs['A']||0);const bad=(gs['C']||0)+(gs['B']||0);if(good>bad)goodStudents.push({name:getStudentName(sid),good,bad});if(bad>good)needHelp.push({name:getStudentName(sid),good,bad});});
+  let report='# 本周作业情况分析报告\n\n生成日期：'+now()+'\n\n## 一、整体完成情况\n本周共布置作业 '+hws.length+' 次，批改 '+total+' 人次。\n\n## 二、等级分布\n- A+：'+(allGrades['A+']||0)+'人次\n- A：'+(allGrades['A']||0)+'人次\n- B+：'+(allGrades['B+']||0)+'人次\n- B：'+(allGrades['B']||0)+'人次\n- C：'+(allGrades['C']||0)+'人次\n\n## 三、表现优秀学生\n'+goodStudents.slice(0,10).map(s=>'- '+s.name+'（优秀'+s.good+'次）').join('\n')+'\n\n## 四、需要关注的学生\n'+needHelp.slice(0,10).map(s=>'- '+s.name+'（需改进'+s.bad+'次）').join('\n');
+  const m=$('modalContent');
+  m.innerHTML='<h3>📊 周作业分析报告</h3><textarea id="hwReport" style="width:100%;height:400px;font-family:monospace;font-size:0.82rem">'+esc(report)+'</textarea><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">关闭</button><button class="btn btn-primary" onclick="copyText(\'hwReport\');toast(\'已复制报告\',\'success\')">📋 复制报告</button></div>';
+  $('modalOverlay').classList.add('active');
+}
+function copyText(id){const el=$(id);if(el){el.select();document.execCommand('copy');}}
+
+// ===== COUNSELING =====
+let isRecording=false,mediaRecorder=null,audioChunks=[];
+function renderCounseling(){
+  let h='<div class="page-header"><h1>💛 谈心谈话</h1><div class="btn-group"><button class="btn btn-primary" onclick="addCounseling()">+ 谈心记录</button></div></div>';
+  h+='<div class="card voice-recorder"><h3 style="margin:0">🎤 语音录制</h3><button id="voiceBtn" class="btn '+(isRecording?'btn-danger':'btn-primary')+'" onclick="toggleRecording(\'counseling\')">'+(isRecording?'⏹ 停止录音':'🎙️ 开始录音')+'</button><span id="recordingTime" style="display:'+(isRecording?'inline':'none')+'"><span class="recording-indicator"><span class="dot"></span> 录音中...</span></span></div>';
+  const filter=$('counselFilter')?$('counselFilter').value:'';
+  h+='<div style="margin-bottom:12px">'+studentSelectHTML('counselFilter',filter)+' <button class="btn btn-sm btn-outline" onclick="renderCounseling()">筛选</button></div>';
+  let recs=[...data.counseling].sort((a,b)=>b.date.localeCompare(a.date));
+  if(filter)recs=recs.filter(c=>c.studentId===filter);
+  if(recs.length===0)h+='<div class="card"><p class="empty-state">暂无谈心记录</p></div>';
+  else recs.forEach(c=>{
+    h+='<div class="card"><div class="card-header"><h3>💛 '+esc(getStudentName(c.studentId))+'</h3><span>'+esc(c.date)+'</span></div><p><strong>主题：</strong>'+esc(c.topic||'')+'</p><p><strong>内容：</strong>'+esc((c.content||'').substring(0,200))+'</p>'+(c.followUp?'<p><strong>跟进：</strong>'+esc(c.followUp)+'</p>':'')+'<div class="btn-group" style="margin-top:8px"><button class="btn btn-sm btn-outline" onclick="editCounseling(\''+c.id+'\')">编辑</button><button class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="deleteCounseling(\''+c.id+'\')">删除</button></div></div>';
+  });
+  $('mainContent').innerHTML=h;
+}
+function addCounseling(initData){
+  initData=initData||{};
+  const m=$('modalContent');let h='<h3>'+(initData.id?'编辑':'新增')+'谈心记录</h3>';
+  h+='<div class="form-group"><label>学生</label>'+studentSelectHTML('counStu',initData.studentId||'')+'</div>';
+  h+='<div class="form-row"><div class="form-group"><label>日期</label><input type="date" id="counDate" value="'+(initData.date||now())+'"></div><div class="form-group"><label>主题</label><input id="counTopic" value="'+esc(initData.topic||'')+'"></div></div>';
+  h+='<div class="form-group"><label>谈话内容</label><textarea id="counContent" style="width:100%;height:150px">'+esc(initData.content||'')+'</textarea></div>';
+  h+='<div class="form-group"><label>后续跟进</label><input id="counFollow" value="'+esc(initData.followUp||'')+'"></div>';
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="saveCounseling(\''+(initData.id||'')+'\')">保存</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function editCounseling(id){const c=data.counseling.find(x=>x.id===id);if(c)addCounseling(c);}
+function saveCounseling(id){
+  const item={id:id||uid(),studentId:$('counStu_select')?$('counStu_select').value:'',date:$('counDate').value,topic:$('counTopic').value,content:$('counContent').value,followUp:$('counFollow').value};
+  if(!item.studentId){toast('请选择学生','error');return;}
+  if(id){const idx=data.counseling.findIndex(x=>x.id===id);if(idx>=0)data.counseling[idx]=item;}
+  else data.counseling.push(item);
+  saveData();closeModal();renderAll();toast('谈心记录已保存','success');
+}
+function deleteCounseling(id){data.counseling=data.counseling.filter(x=>x.id!==id);saveData();renderAll();}
+
+// ===== HOME-SCHOOL COMMUNICATION =====
+function renderHomeSchool(){
+  let h='<div class="page-header"><h1>📞 家校沟通</h1><div class="btn-group"><button class="btn btn-primary" onclick="addHomeSchool()">+ 沟通记录</button><button class="btn btn-outline" onclick="showHSCTemplates()">📋 话术模板</button></div></div>';
+  h+='<div class="card voice-recorder"><h3 style="margin:0">🎤 语音录制（当面沟通场景）</h3><button id="hsVoiceBtn" class="btn '+(isRecording?'btn-danger':'btn-primary')+'" onclick="toggleRecording(\'homeSchool\')">'+(isRecording?'⏹ 停止录音':'🎙️ 开始录音')+'</button><span id="hsRecordingTime" style="display:'+(isRecording?'inline':'none')+'"><span class="recording-indicator"><span class="dot"></span> 录音中...</span></span></div>';
+  const filter=$('hsFilter')?$('hsFilter').value:'';
+  h+='<div style="margin-bottom:12px">'+studentSelectHTML('hsFilter',filter)+' <button class="btn btn-sm btn-outline" onclick="renderHomeSchool()">筛选</button></div>';
+  let recs=[...data.homeSchool].sort((a,b)=>b.date.localeCompare(a.date));
+  if(filter)recs=recs.filter(x=>x.studentId===filter);
+  if(recs.length===0)h+='<div class="card"><p class="empty-state">暂无家校沟通记录</p></div>';
+  else recs.forEach(x=>{
+    h+='<div class="card"><div class="card-header"><h3>📞 '+esc(getStudentName(x.studentId))+' ('+esc(x.method||'')+')</h3><span>'+esc(x.date)+'</span></div><p><strong>沟通内容：</strong>'+esc((x.content||'').substring(0,200))+'</p><p><strong>家长反馈：</strong>'+esc((x.feedback||'').substring(0,200))+'</p><div class="btn-group" style="margin-top:8px"><button class="btn btn-sm btn-outline" onclick="editHomeSchool(\''+x.id+'\')">编辑</button><button class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="deleteHomeSchool(\''+x.id+'\')">删除</button></div></div>';
+  });
+  $('mainContent').innerHTML=h;
+}
+function addHomeSchool(initData){
+  initData=initData||{};
+  const m=$('modalContent');let h='<h3>'+(initData.id?'编辑':'新增')+'家校沟通记录</h3>';
+  h+='<div class="form-group"><label>学生</label>'+studentSelectHTML('hsStu',initData.studentId||'')+'</div>';
+  h+='<div class="form-row"><div class="form-group"><label>日期</label><input type="date" id="hsDate" value="'+(initData.date||now())+'"></div><div class="form-group"><label>沟通方式</label><select id="hsMethod"><option value="电话">电话</option><option value="微信">微信</option><option value="面谈">面谈</option></select></div></div>';
+  h+='<div class="form-group"><label>沟通内容</label><textarea id="hsContent" style="width:100%;height:120px">'+esc(initData.content||'')+'</textarea></div>';
+  h+='<div class="form-group"><label>家长反馈</label><textarea id="hsFeedback" style="width:100%">'+esc(initData.feedback||'')+'</textarea></div>';
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="saveHomeSchool(\''+(initData.id||'')+'\')">保存</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function editHomeSchool(id){const x=data.homeSchool.find(r=>r.id===id);if(x)addHomeSchool(x);}
+function saveHomeSchool(id){
+  const item={id:id||uid(),studentId:$('hsStu_select')?$('hsStu_select').value:'',date:$('hsDate').value,method:$('hsMethod').value,content:$('hsContent').value,feedback:$('hsFeedback').value};
+  if(!item.studentId){toast('请选择学生','error');return;}
+  if(id){const idx=data.homeSchool.findIndex(x=>x.id===id);if(idx>=0)data.homeSchool[idx]=item;}
+  else data.homeSchool.push(item);
+  saveData();closeModal();renderAll();toast('沟通记录已保存','success');
+}
+function deleteHomeSchool(id){data.homeSchool=data.homeSchool.filter(x=>x.id!==id);saveData();renderAll();}
+
+// ===== HSC TEMPLATES =====
+function showHSCTemplates(){
+  const templates={
+    '学生学习问题':['您好，最近观察到XX同学在XX科目上有些跟不上，想了解一下他在家学习的情况，我们一起想办法帮助他。','XX同学最近上课注意力不太集中，可能是家里有什么事情影响。想约个时间面谈一下，您看什么时候方便？'],
+    '行为纪律问题':['XX同学最近有几次和同学发生小冲突，我已经跟他谈过了。想跟您沟通一下，在家也帮忙多引导一下，家校合力效果更好。','关于XX同学近期的课堂纪律情况，我想跟您做个沟通，我们一起帮助他改进。'],
+    '表扬进步':['您好！XX同学最近表现特别好，学习积极性和成绩都有明显提升，特地跟您分享这个好消息！','XX同学在班级活动中表现非常出色，展现了很好的领导力，值得表扬！'],
+    '考勤请假':['XX同学今天没来上课，想确认一下情况。如果是生病了请及时就医，作业可以让同学带回去。','关于XX同学近期的请假情况，想跟您确认一下，如果有什么需要学校帮助的请随时说。'],
+    '活动通知':['下周三班级将组织一次XX活动，需要家长配合准备XX。具体安排我会发到班级群，请您关注。','期中家长会定于下周五下午，届时会汇报每位学生的学习情况，请您提前安排好时间参加。']
+  };
+  const m=$('modalContent');let h='<h3>📋 家校沟通话术模板</h3>';
+  Object.entries(templates).forEach(([cat,items])=>{
+    h+='<h4 style="margin:12px 0 6px;color:var(--primary)">'+esc(cat)+'</h4>';
+    items.forEach(t=>{h+='<div style="padding:8px 12px;margin:6px 0;background:var(--bg);border-radius:6px;display:flex;justify-content:space-between;align-items:center"><span style="flex:1">'+esc(t)+'</span><button class="btn btn-sm btn-outline" onclick="copyTextContent(\''+esc(t).replace(/'/g,"\\'")+'\')">📋 复制</button></div>';});
+  });
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">关闭</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function copyTextContent(t){navigator.clipboard.writeText(t).then(()=>toast('已复制','success')).catch(()=>toast('复制失败，请手动选择文本','error'));}
+
+// ===== COMMENTS =====
+function renderComments(){
+  currentSubModule=currentSubModule||'weekly';
+  let h='<div class="page-header"><h1>✍️ 教师评语</h1></div>';
+  h+='<div class="sub-tabs"><div class="sub-tab'+(currentSubModule==='weekly'?' active':'')+'" onclick="currentSubModule=\'weekly\';renderComments()">周反馈</div><div class="sub-tab'+(currentSubModule==='term'?' active':'')+'" onclick="currentSubModule=\'term\';renderComments()">期末评语</div><div class="sub-tab'+(currentSubModule==='individual'?' active':'')+'" onclick="currentSubModule=\'individual\';renderComments()">个别反馈</div><div class="sub-tab'+(currentSubModule==='templates'?' active':'')+'" onclick="currentSubModule=\'templates\';renderComments()">评语模板</div></div>';
+  if(currentSubModule==='weekly'){
+    h+='<button class="btn btn-primary" style="margin-bottom:12px" onclick="addComment(\'weekly\')">+ 周反馈</button>';
+    if(data.comments.weekly.length===0)h+='<p class="empty-state">暂无周反馈</p>';
+    else data.comments.weekly.forEach(c=>{h+='<div class="card"><div class="card-header"><h3>📅 第'+esc(c.week||'')+'周</h3><button class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="deleteComment(\'weekly\',\''+c.id+'\')">删除</button></div><p>'+esc((c.content||'').substring(0,300))+'</p></div>';});
+  }else if(currentSubModule==='term'){
+    h+='<button class="btn btn-primary" style="margin-bottom:12px" onclick="addComment(\'term\')">+ 期末评语</button>';
+    if(data.comments.term.length===0)h+='<p class="empty-state">暂无期末评语</p>';
+    else data.comments.term.forEach(c=>{h+='<div class="card"><div class="card-header"><h3>'+esc(c.studentName||'')+'</h3><button class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="deleteComment(\'term\',\''+c.id+'\')">删除</button></div><p>'+esc((c.content||'').substring(0,300))+'</p></div>';});
+  }else if(currentSubModule==='individual'){
+    h+='<button class="btn btn-primary" style="margin-bottom:12px" onclick="addComment(\'individual\')">+ 个别反馈</button>';
+    if(data.comments.individual.length===0)h+='<p class="empty-state">暂无个别反馈</p>';
+    else data.comments.individual.forEach(c=>{h+='<div class="card"><div class="card-header"><h3>'+esc(c.studentName||'')+'</h3><button class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="deleteComment(\'individual\',\''+c.id+'\')">删除</button></div><p>'+esc((c.content||'').substring(0,300))+'</p></div>';});
+  }else{
+    const templates={'学习进步类':['上课认真听讲，作业完成质量高，成绩稳步提升，值得表扬！','学习态度端正，积极主动思考，希望继续保持这股劲头。','近期在学习上取得了明显进步，尤其是XX科目，希望在其他科目上也同样努力。'],'需要努力类':['上课注意力不够集中，作业时有缺交现象，希望能改进。','基础知识掌握不够扎实，建议课后多花时间复习巩固。','学习积极性有待提高，希望家长配合督促孩子按时完成作业。'],'纪律表现类':['遵守课堂纪律，尊敬师长，团结同学，是班级的好榜样。','上课偶尔讲话，影响了课堂秩序，希望能自我约束。'],'品德行为类':['乐于助人，热心集体事务，展现了良好的品德修养。','在班级活动中表现积极，有较强的集体荣誉感。']};
+    h+='<div class="card"><h3>📋 评语模板库</h3>';
+    Object.entries(templates).forEach(([cat,items])=>{
+      h+='<h4 style="margin:12px 0 6px">🏷️ '+esc(cat)+'</h4>';
+      items.forEach(t=>{h+='<div style="padding:8px 12px;margin:6px 0;background:var(--bg);border-radius:6px;display:flex;justify-content:space-between;align-items:center"><span style="flex:1">'+esc(t)+'</span><button class="btn btn-sm btn-outline" onclick="navigator.clipboard.writeText(\''+esc(t).replace(/'/g,"\\'")+'\').then(()=>toast(\'已复制\',\'success\'))">📋 复制</button></div>';});
+    });
+    h+='</div>';
+  }
+  $('mainContent').innerHTML=h;
+}
+function addComment(type){
+  const m=$('modalContent');let h='<h3>添加评语</h3>';
+  if(type==='weekly')h+='<div class="form-group"><label>周次</label><input id="cmtWeek" placeholder="如：第1周"></div>';
+  if(type==='term'||type==='individual')h+='<div class="form-group"><label>学生</label>'+studentSelectHTML('cmtStu','')+'</div>';
+  h+='<div class="form-group"><label>评语内容</label><textarea id="cmtContent" style="width:100%;height:150px"></textarea></div>';
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="saveComment(\''+type+'\')">保存</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function saveComment(type){
+  const item={id:uid(),content:$('cmtContent').value};
+  if(type==='weekly')item.week=$('cmtWeek').value;
+  else{item.studentName=getStudentName($('cmtStu_select')?$('cmtStu_select').value:'')||'未知';item.studentId=($('cmtStu_select')?$('cmtStu_select').value:'')||'';}
+  data.comments[type].push(item);saveData();closeModal();renderAll();toast('评语已保存','success');
+}
+function deleteComment(type,id){data.comments[type]=data.comments[type].filter(x=>x.id!==id);saveData();renderAll();}
+
+// ===== SELECTIONS =====
+function renderSelections(){
+  let h='<div class="page-header"><h1>🎖️ 评选管理</h1><button class="btn btn-primary" onclick="addSelection()">+ 创建评选</button></div>';
+  if(data.selections.length===0)h+='<div class="card"><p class="empty-state">暂无评选活动</p></div>';
+  else data.selections.forEach(s=>{
+    h+='<div class="card"><div class="card-header"><h3>🎖️ '+esc(s.name)+'</h3><div class="btn-group"><button class="btn btn-sm btn-outline" onclick="editSelection(\''+s.id+'\')">管理</button><button class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="deleteSelection(\''+s.id+'\')">删除</button></div></div><p><strong>标准：</strong>'+esc(s.criteria||'')+'</p><p><strong>候选人：</strong>'+esc((s.candidates||[]).map(cid=>getStudentName(cid)).join('，'))+'</p><p><strong>结果：</strong>'+esc((s.results||[]).map(r=>getStudentName(r.studentId)+(r.votes?' (票数:'+r.votes+')':'')).join('，')||'未评选')+'</p></div>';
+  });
+  $('mainContent').innerHTML=h;
+}
+function addSelection(){
+  const m=$('modalContent');let h='<h3>创建评选活动</h3>';
+  h+='<div class="form-group"><label>评选名称</label><input id="selName" placeholder="如：三好学生评选"></div>';
+  h+='<div class="form-group"><label>评选标准</label><textarea id="selCriteria" style="width:100%"></textarea></div>';
+  h+='<div class="form-group"><label>候选人（可多选）</label><div style="max-height:200px;overflow-y:auto">'+data.students.map(s=>'<label style="display:block;margin:3px 0"><input type="checkbox" value="'+esc(s.id)+'" class="sel-candidate"> '+esc(s.name)+'</label>').join('')+'</div></div>';
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="saveSelection()">创建</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function saveSelection(){
+  const name=$('selName').value;if(!name){toast('请输入评选名称','error');return;}
+  const candidates=Array.from(document.querySelectorAll('.sel-candidate:checked')).map(x=>x.value);
+  data.selections.push({id:uid(),name,criteria:$('selCriteria').value,candidates,results:[]});
+  saveData();closeModal();renderAll();toast('评选已创建','success');
+}
+function editSelection(sid){
+  const s=data.selections.find(x=>x.id===sid);if(!s)return;
+  const m=$('modalContent');let h='<h3>评选管理 - '+esc(s.name)+'</h3>';
+  h+='<h4>候选人票数设定</h4>';
+  s.candidates.forEach(cid=>{const r=s.results.find(x=>x.studentId===cid);h+='<div class="form-row" style="margin-bottom:8px"><span style="flex:1;line-height:36px">'+esc(getStudentName(cid))+'</span><input type="number" id="sel_votes_'+cid.replace(/[^a-zA-Z0-9]/g,'_')+'" value="'+(r?r.votes:0)+'" min="0" style="width:80px"><span>票</span></div>';});
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="saveSelResults(\''+sid+'\')">保存结果</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function saveSelResults(sid){
+  const s=data.selections.find(x=>x.id===sid);if(!s)return;
+  s.results=s.candidates.map(cid=>{
+    const el=$(('sel_votes_'+cid).replace(/[^a-zA-Z0-9_]/g,'_'));
+    return {studentId:cid,votes:parseInt((el?el.value:0)||0)||0};
+  });
+  saveData();closeModal();renderAll();toast('评选结果已保存','success');
+}
+function deleteSelection(id){data.selections=data.selections.filter(x=>x.id!==id);saveData();renderAll();}
+
+// ===== TOOLKIT =====
+function renderToolkit(){
+  let h='<div class="page-header"><h1>🧠 班主任锦囊</h1></div>';
+  // FAQ Knowledge Base
+  h+='<div class="card"><div class="card-header"><h3>📚 常见问题知识库</h3></div><div style="display:flex;flex-wrap:wrap;gap:8px">';
+  const faqs=[
+    {q:'学生违纪怎么处理？',a:'1. 冷静处理，不要当众批评；2. 私下谈话，了解原因；3. 明确告知校规和后果；4. 给予改正机会，跟踪观察；5. 严重违纪按学校规定上报。'},
+    {q:'家长不配合怎么办？',a:'1. 耐心沟通，换位思考；2. 用具体事例说明问题；3. 强调家校合作的重要性；4. 邀请家长到校面谈；5. 寻求年级组或学校支持。'},
+    {q:'如何提高班级成绩？',a:'1. 分析每个学生的薄弱科目；2. 组建学习互助小组；3. 定期进行小测验查漏补缺；4. 与科任老师协调教学进度；5. 表扬进步，营造学习氛围。'},
+    {q:'学生之间有矛盾怎么办？',a:'1. 分别听取双方陈述；2. 引导换位思考；3. 寻找共同点，促进和解；4. 必要时请家长协助；5. 记录处理过程，跟踪后续。'},
+    {q:'如何组织班级活动？',a:'1. 明确活动目的和形式；2. 征求学生意见，提高参与度；3. 做好安全预案；4. 分配任务，人人参与；5. 活动后总结反馈。'},
+    {q:'学生厌学怎么办？',a:'1. 了解厌学原因（学习困难/家庭/人际关系）；2. 降低要求，设立小目标；3. 发现闪光点，多鼓励；4. 联系家长共同关注；5. 必要时咨询心理老师。'},
+    {q:'如何管理班级纪律？',a:'1. 制定明确的班规并公示；2. 奖惩分明，一视同仁；3. 培养班干部协助管理；4. 定期召开班会总结；5. 以身作则，树立威信。'},
+    {q:'期中/期末怎么复习？',a:'1. 制定复习计划表；2. 梳理重点知识；3. 组织模拟测试；4. 关注后进生辅导；5. 调整心态，劳逸结合。'},
+    {q:'如何写学生评语？',a:'1. 先肯定优点再指不足；2. 具体描述而非笼统评价；3. 给出明确改进建议；4. 语气鼓励积极；5. 参考评语模板（见教师评语模块）。'},
+    {q:'家校群管理技巧？',a:'1. 发布群规，明确发言规范；2. 重要通知@所有人；3. 及时回复家长疑问；4. 分享学生在校照片/视频；5. 避免在群里批评个别学生。'}
+  ];
+  faqs.forEach(f=>{h+='<button class="btn btn-outline btn-sm" onclick="showFAQAnswer(\''+esc(f.q)+'\',\''+esc(f.a).replace(/'/g,"\\'")+'\')">'+esc(f.q)+'</button>';});
+  h+='</div></div>';
+  // AI Panel
+  h+='<div class="ai-panel"><h3>🤖 AI 问答助手</h3><p style="margin-bottom:8px;font-size:0.85rem;opacity:0.9">输入班主任工作中遇到的问题，获取建议</p><div class="form-group"><label style="color:rgba(255,255,255,0.8)">选择场景</label><select id="aiScene" style="width:100%;background:rgba(255,255,255,0.15);color:#fff;border:none"><option value="problem">问题解答</option><option value="speech">沟通话术生成</option><option value="notice">家长通知撰写</option><option value="comment">学生评语生成</option></select></div><input class="ai-input" id="aiQuestion" placeholder="输入你的问题..."><button class="btn" style="background:rgba(255,255,255,0.2);color:#fff" onclick="aiAnswer()">💡 生成回答</button><div class="ai-response" id="aiResponse"></div></div>';
+  // Quick links
+  h+='<div class="card"><div class="card-header"><h3>🔗 快捷链接</h3></div><div class="btn-group"><button class="btn btn-outline" onclick="window.open(\'https://kimi.moonshot.cn\',\'_blank\')">Kimi AI助手</button><button class="btn btn-outline" onclick="window.open(\'https://tongyi.aliyun.com\',\'_blank\')">通义千问</button><button class="btn btn-outline" onclick="window.open(\'https://yiyan.baidu.com\',\'_blank\')">文心一言</button><button class="btn btn-outline" onclick="window.open(\'https://chat.deepseek.com\',\'_blank\')">DeepSeek</button></div></div>';
+  $('mainContent').innerHTML=h;
+}
+function showFAQAnswer(q,a){
+  const m=$('modalContent');
+  m.innerHTML='<h3>'+esc(q)+'</h3><div style="padding:16px;background:var(--bg);border-radius:8px;line-height:1.8">'+esc(a).replace(/\\n/g,'<br>').replace(/(\d+\.\s)/g,'<br>$1')+'</div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">关闭</button><button class="btn btn-primary" onclick="navigator.clipboard.writeText(\''+esc(a).replace(/'/g,"\\'")+'\').then(()=>toast(\'已复制\',\'success\'))">📋 复制</button></div>';
+  $('modalOverlay').classList.add('active');
+}
+function aiAnswer(){
+  const q=$('aiQuestion').value;
+  const scene=$('aiScene').value;
+  if(!q){toast('请输入问题','error');return;}
+  $('aiResponse').style.display='block';
+  $('aiResponse').innerHTML='<p style="opacity:0.7">⏳ 正在生成回答...</p>';
+  // Simulate AI response with template-based generation
+  setTimeout(()=>{
+    let response='';
+    if(scene==='speech'){
+      const templates=['尊敬的XX同学家长，您好！关于'+q.substring(0,20)+'的问题，我想跟您做个沟通。首先感谢您一直以来对班级工作的支持。','具体来说，我们发现孩子最近'+q.substring(0,15)+'方面有一些需要关注的地方。','建议家长在家可以多关注以下几点：1. 每天检查作业完成情况；2. 多与孩子交流学校生活；3. 鼓励孩子表达自己的想法。','我们学校这边也会加强关注，及时反馈。家校合力，一定能帮助孩子更好地成长。如有任何疑问，随时联系我。'];
+      response=templates.join('<br><br>');
+    }else if(scene==='notice'){
+      response='【家长通知】<br><br>各位家长，大家好！<br><br>关于"'+q+'"相关事项，特此通知如下：<br><br>一、时间安排<br>请各位家长注意相关时间节点，提前做好准备。<br><br>二、注意事项<br>1. 请督促孩子按时完成相关任务<br>2. 如有特殊情况请提前告知<br>3. 请关注班级群后续通知<br><br>三、联系方式<br>如有疑问，请通过微信或电话联系班主任。<br><br>感谢各位家长的配合与支持！<br><br>班主任<br>'+now();
+    }else if(scene==='comment'){
+      const goodTemplates=['学习态度端正，作业认真，课堂表现积极，是个有潜力的好学生。','思维活跃，乐于助人，在班级中起到了很好的带头作用。','踏实认真，勤奋好学，成绩稳步提升，值得表扬。'];
+      response='【学生评语】<br><br>'+goodTemplates[Math.floor(Math.random()*goodTemplates.length)]+'<br><br>建议方面：关于'+q.substring(0,20)+'，可以在以下方面继续努力：加强薄弱科目的学习，多参与课堂互动，培养自主学习能力。<br><br>总体评价：该生整体表现良好，有很大的进步空间。希望在新的学期继续努力，取得更好的成绩！';
+    }else{
+      const tips=['建议一：冷静分析问题的根本原因。不要急于下结论，先全面了解情况。','建议二：与学生/家长进行一对一沟通。在私下场合进行交流，更容易建立信任。','建议三：制定具体的改进方案。把大目标分解成小步骤，让学生看到可行的路径。','建议四：寻求多方协作。与科任老师、家长、年级组形成合力，共同帮助。','建议五：做好记录和跟踪。定期评估改进效果，及时调整策略。'];
+      response='关于"'+q+'"的问题，以下是我的建议：<br><br>'+tips.join('<br><br>')+'<br><br>💡 温馨提示：每个学生都是独特的个体，请根据具体情况灵活调整方案。如有需要可以进一步咨询学校心理老师或教务处。';
+    }
+    $('aiResponse').innerHTML=response;
+  },500);
+}
+
+// ===== SELF IMPROVEMENT & REPORT =====
+function renderSelfImprove(){
+  currentSubModule=currentSubModule||'records';
+  let h='<div class="page-header"><h1>📋 自身提升与述职</h1></div>';
+  h+='<div class="sub-tabs"><div class="sub-tab'+(currentSubModule==='records'?' active':'')+'" onclick="currentSubModule=\'records\';renderSelfImprove()">工作记录</div><div class="sub-tab'+(currentSubModule==='progress'?' active':'')+'" onclick="currentSubModule=\'progress\';renderSelfImprove()">成绩变化追踪</div><div class="sub-tab'+(currentSubModule==='warm'?' active':'')+'" onclick="currentSubModule=\'warm\';renderSelfImprove()">暖心瞬间</div><div class="sub-tab'+(currentSubModule==='report'?' active':'')+'" onclick="currentSubModule=\'report\';renderSelfImprove()">生成述职文稿</div></div>';
+  if(currentSubModule==='records'){
+    h+='<button class="btn btn-primary" style="margin-bottom:12px" onclick="addWorkRecord()">+ 工作记录</button>';
+    const cats=['班级管理','教学工作','家校沟通','个人成长','其他'];
+    cats.forEach(cat=>{
+      const items=data.workRecords.filter(r=>r.category===cat);
+      if(items.length>0){
+        h+='<div class="card"><h3>📌 '+esc(cat)+' ('+items.length+'条)</h3>';
+        items.forEach(r=>{h+='<div style="padding:8px 0;border-bottom:1px solid var(--border)"><strong>'+esc(r.date)+'</strong> '+esc(r.type||'')+': '+esc((r.content||'').substring(0,100))+'<button class="btn btn-sm btn-outline" style="color:var(--danger);float:right" onclick="deleteWorkRecord(\''+r.id+'\')">删除</button></div>';});
+        h+='</div>';
+      }
+    });
+    if(data.workRecords.length===0)h+='<p class="empty-state">暂无工作记录</p>';
+  }else if(currentSubModule==='progress'){
+    h+='<div class="card"><h3>📊 成绩变化自动汇总</h3>';
+    const examNames=Object.keys(data.grades).sort();
+    if(examNames.length===0)h+='<p>暂无考试数据</p>';
+    else{
+      const subjects=['语文','数学','英语'];
+      subjects.forEach(subj=>{
+        const avgs=examNames.map(en=>{
+          const g=data.grades[en];if(!g)return 0;
+          const scores=data.students.map(s=>{if(!g[s.id]||g[s.id][subj]==null)return null;return parseFloat(g[s.id][subj]);}).filter(v=>v!=null&&!isNaN(v));
+          return scores.length>0?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length*10)/10:0;
+        });
+        h+='<p><strong>'+esc(subj)+'：</strong>'+avgs.map((a,i)=>esc(examNames[i])+':'+a+'分').join(' → ')+'</p>';
+      });
+    }
+    h+='</div>';
+    // Progress and decline students
+    const totals={};
+    data.points.forEach(p=>{totals[p.studentId]=(totals[p.studentId]||0)+p.value;});
+    const totalSorted=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+    h+='<div class="card"><h3>🏆 进步学生（积分排名TOP10）</h3><ol>'+totalSorted.slice(0,10).map(([sid,val])=>'<li>'+esc(getStudentName(sid))+' ('+(val>0?'+':'')+val+'分)</li>').join('')+'</ol></div>';
+    h+='<div class="card"><h3>⚠️ 需关注学生（积分排名后5）</h3><ol>'+totalSorted.slice(-5).reverse().map(([sid,val])=>'<li>'+esc(getStudentName(sid))+' ('+val+'分)</li>').join('')+'</ol></div>';
+  }else if(currentSubModule==='warm'){
+    h+='<button class="btn btn-primary" style="margin-bottom:12px" onclick="addWarmMoment()">+ 暖心瞬间</button>';
+    if(data.warmMoments.length===0)h+='<p class="empty-state">暂无暖心记录</p>';
+    else data.warmMoments.forEach(w=>{
+      h+='<div class="card"><div class="card-header"><h3>💕 '+esc(w.date)+'</h3><button class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="deleteWarmMoment(\''+w.id+'\')">删除</button></div><p><strong>涉及学生：</strong>'+esc((w.studentIds||[]).map(sid=>getStudentName(sid)).join('、'))+'</p><p>'+esc(w.description||'')+'</p><p><em>我的感受：'+esc(w.feeling||'')+'</em></p></div>';
+    });
+  }else if(currentSubModule==='report'){
+    h+='<div class="card"><h3>📄 生成学期述职文稿</h3><p style="margin-bottom:12px">自动汇总所有模块数据，生成完整的述职报告（可编辑后复制使用）</p>';
+    h+='<div class="form-group"><label>选择包含的模块</label><div>'+['工作记录','暖心瞬间','成绩分析','积分排名','班级荣誉','班委名单','卫生安排'].map(m=>'<label style="display:inline-block;margin-right:12px"><input type="checkbox" value="'+m+'" checked class="report-module"> '+m+'</label>').join('')+'</div></div>';
+    h+='<div class="form-group"><label>学期名称</label><input id="reportTerm" value="'+(data.classInfo.term||'2025-2026学年第二学期')+'"></div>';
+    h+='<button class="btn btn-primary" onclick="generateReport()">📄 生成述职文稿</button>';
+    h+='<textarea id="reportOutput" style="width:100%;height:400px;margin-top:12px;font-size:0.85rem" placeholder="生成的述职报告将显示在这里..."></textarea>';
+    h+='<div class="btn-group" style="margin-top:8px"><button class="btn btn-outline" onclick="copyText(\'reportOutput\');toast(\'已复制\',\'success\')">📋 复制全文</button><button class="btn btn-outline" onclick="downloadReport()">📥 下载为Word(.doc)</button></div></div>';
+  }
+  $('mainContent').innerHTML=h;
+}
+function addWorkRecord(){
+  const m=$('modalContent');let h='<h3>添加工作记录</h3>';
+  h+='<div class="form-row"><div class="form-group"><label>日期</label><input type="date" id="wrDate" value="'+now()+'"></div><div class="form-group"><label>事项类型</label><input id="wrType" placeholder="如：组织班会、家访、培训"></div></div>';
+  h+='<div class="form-group"><label>分类</label><select id="wrCat"><option>班级管理</option><option>教学工作</option><option>家校沟通</option><option>个人成长</option><option>其他</option></select></div>';
+  h+='<div class="form-group"><label>具体内容</label><textarea id="wrContent" style="width:100%;height:100px"></textarea></div>';
+  h+='<div class="form-group"><label>效果/收获</label><textarea id="wrResult" style="width:100%"></textarea></div>';
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="saveWorkRecord()">保存</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function saveWorkRecord(){
+  data.workRecords.push({id:uid(),date:$('wrDate').value,type:$('wrType').value,category:$('wrCat').value,content:$('wrContent').value,result:$('wrResult').value});
+  saveData();closeModal();renderAll();toast('工作记录已保存','success');
+}
+function deleteWorkRecord(id){data.workRecords=data.workRecords.filter(r=>r.id!==id);saveData();renderAll();}
+function addWarmMoment(){
+  const m=$('modalContent');let h='<h3>记录暖心瞬间</h3>';
+  h+='<div class="form-group"><label>日期</label><input type="date" id="wmDate" value="'+now()+'"></div>';
+  h+='<div class="form-group"><label>涉及学生（可多选）</label><div style="max-height:150px;overflow-y:auto">'+data.students.map(s=>'<label style="display:block"><input type="checkbox" value="'+esc(s.id)+'" class="wm-stu"> '+esc(s.name)+'</label>').join('')+'</div></div>';
+  h+='<div class="form-group"><label>事情描述</label><textarea id="wmDesc" style="width:100%;height:100px"></textarea></div>';
+  h+='<div class="form-group"><label>我的感受</label><textarea id="wmFeeling" style="width:100%"></textarea></div>';
+  h+='<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="saveWarmMoment()">保存</button></div>';
+  m.innerHTML=h;$('modalOverlay').classList.add('active');
+}
+function saveWarmMoment(){
+  const studentIds=Array.from(document.querySelectorAll('.wm-stu:checked')).map(x=>x.value);
+  data.warmMoments.push({id:uid(),date:$('wmDate').value,studentIds,description:$('wmDesc').value,feeling:$('wmFeeling').value});
+  saveData();closeModal();renderAll();toast('暖心瞬间已保存','success');
+}
+function deleteWarmMoment(id){data.warmMoments=data.warmMoments.filter(w=>w.id!==id);saveData();renderAll();}
+function generateReport(){
+  const term=$('reportTerm').value||'本学期';
+  const modules=Array.from(document.querySelectorAll('.report-module:checked')).map(x=>x.value);
+  let report='【'+esc(term)+'班主任工作述职报告】\n\n';
+  report+='班级：'+esc(data.classInfo.className||'')+' | 年级：'+esc(data.classInfo.grade||'')+'\n';
+  report+='教师：________ | 日期：'+now()+'\n\n';
+  report+='='.repeat(50)+'\n\n';
+  report+='一、学期工作概述\n\n本学期，我担任'+esc(data.classInfo.className||'本班')+'班主任，班级共有'+data.students.length+'名学生。在学校的正确领导下，围绕教学目标和班级管理要求，积极开展了各项工作。\n\n';
+  if(modules.includes('工作记录')){
+    report+='二、主要工作记录\n\n';
+    const cats=['班级管理','教学工作','家校沟通','个人成长'];
+    cats.forEach(cat=>{
+      const items=data.workRecords.filter(r=>r.category===cat);
+      if(items.length>0){
+        report+='【'+cat+'】共'+items.length+'项：\n';
+        items.forEach(r=>{report+='- '+esc(r.date)+' '+esc(r.type||'')+'：'+esc((r.content||'').substring(0,80))+(r.result?'（效果：'+esc(r.result)+'）':'')+'\n';});
+        report+='\n';
+      }
+    });
+  }
+  if(modules.includes('班级荣誉')){
+    report+='三、班级荣誉\n\n';
+    if(data.honors.class.length===0)report+='本学期班级暂未获得集体荣誉。\n';
+    else data.honors.class.forEach(h=>{report+='- '+esc(h.date)+'：'+esc(h.name)+(h.detail?' - '+esc(h.detail):'')+'\n';});
+    report+='\n';
+  }
+  if(modules.includes('成绩分析')){
+    report+='四、教学成绩分析\n\n';
+    const examNames=Object.keys(data.grades).sort();
+    if(examNames.length===0)report+='本学期暂无考试成绩记录。\n';
+    else{
+      examNames.forEach(en=>{
+        report+='【'+esc(en)+'】\n';
+        const g=data.grades[en];
+        ['语文','数学','英语'].forEach(subj=>{
+          const scores=data.students.filter(s=>g[s.id]&&g[s.id][subj]!=null).map(s=>parseFloat(g[s.id][subj])).filter(v=>!isNaN(v));
+          if(scores.length>0){
+            const avg=Math.round(scores.reduce((a,b)=>a+b,0)/scores.length*10)/10;
+            const max=Math.max(...scores);const min=Math.min(...scores);
+            report+='- '+subj+'：平均'+avg+'分，最高'+max+'分，最低'+min+'分\n';
+          }
+        });
+        report+='\n';
+      });
+    }
+  }
+  if(modules.includes('积分排名')){
+    report+='五、学生加减分情况\n\n';
+    const totals={};
+    data.points.forEach(p=>{totals[p.studentId]=(totals[p.studentId]||0)+p.value;});
+    const sorted=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+    report+='积分排名（TOP10）：\n';
+    sorted.slice(0,10).forEach(([sid,val],i)=>{report+=(i+1)+'. '+getStudentName(sid)+'（'+(val>0?'+':'')+val+'分）\n';});
+    report+='\n积分排名（后5，需关注）：\n';
+    sorted.slice(-5).reverse().forEach(([sid,val],i)=>{report+=(i+1)+'. '+getStudentName(sid)+'（'+val+'分）\n';});
+    report+='\n';
+  }
+  if(modules.includes('班委名单')){
+    report+='六、班委团队\n\n';
+    if(data.committee.length===0)report+='本学期暂未设置班委。\n';
+    else data.committee.forEach(c=>{report+='- '+esc(c.role)+'：'+esc(getStudentName(c.studentId))+(c.description?'（'+esc(c.description)+'）':'')+'\n';});
+    report+='\n';
+  }
+  if(modules.includes('卫生安排')){
+    report+='七、卫生值日安排\n\n值日区域：'+(data.cleaning.areas||[]).join('、')+'\n实行按周轮换制度，确保教室环境整洁。\n\n';
+  }
+  if(modules.includes('暖心瞬间')){
+    report+='八、暖心瞬间与学生成长\n\n';
+    if(data.warmMoments.length===0)report+='本学期暂未记录暖心瞬间。\n';
+    else data.warmMoments.forEach(w=>{report+='- '+esc(w.date)+'：'+esc(w.description||'')+'（感受：'+esc(w.feeling||'')+'）\n';});
+    report+='\n';
+  }
+  report+='九、存在的不足\n\n1. 在班级精细化管理方面还有提升空间\n2. 部分后进生的转化工作需要进一步加强\n3. 家校沟通的深度和广度有待提高\n\n';
+  report+='十、下学期工作计划\n\n1. 继续加强班级常规管理\n2. 针对后进生制定个性化帮扶方案\n3. 增加家校互动频率，定期举办家长会\n4. 开展更多班级主题活动\n5. 加强自身业务学习，提升专业素养\n\n';
+  report+='以上为'+esc(term)+'述职报告，请领导批评指正。\n';
+  $('reportOutput').value=report;
+  toast('述职文稿已生成','success');
+}
+function downloadReport(){
+  const content=$('reportOutput').value;
+  if(!content){toast('请先生成述职文稿','error');return;}
+  const blob=new Blob(['\uFEFF'+content],{type:'application/msword;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='述职报告_'+now()+'.doc';a.click();
+  toast('文件已下载','success');
+}
+
+// ===== CLASS NAME =====
+function updateClassName(){
+  const m=$('modalContent');
+  m.innerHTML='<h3>设置班级信息</h3><div class="form-group"><label>班级名称</label><input id="clsName" value="'+esc(data.classInfo.className||'')+'" placeholder="如：三年级1班"></div><div class="form-group"><label>年级</label><input id="clsGrade" value="'+esc(data.classInfo.grade||'')+'" placeholder="如：三年级"></div><div class="form-group"><label>学期</label><input id="clsTerm" value="'+esc(data.classInfo.term||'')+'" placeholder="如：2025-2026学年第二学期"></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="saveClassName()">保存</button></div>';
+  $('modalOverlay').classList.add('active');
+}
+function saveClassName(){
+  data.classInfo.className=$('clsName').value;
+  data.classInfo.grade=$('clsGrade').value;
+  data.classInfo.term=$('clsTerm').value;
+  $('classNameDisplay').textContent=data.classInfo.className||'未设置班级';
+  saveData();closeModal();renderAll();toast('班级信息已更新','success');
+}
+
+// ===== VOICE RECORDING =====
+function toggleRecording(source){
+  if(isRecording){stopRecording(source);return;}
+  if(!('webkitSpeechRecognition' in window)&&!('SpeechRecognition' in window)){
+    toast('您的浏览器不支持语音识别，请使用Chrome浏览器','error');return;
+  }
+  const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const recognition=new SpeechRecognition();
+  recognition.lang='zh-CN';
+  recognition.continuous=true;
+  recognition.interimResults=true;
+  let finalText='';
+  recognition.onresult=function(event){
+    let interim='';
+    for(let i=event.resultIndex;i<event.results.length;i++){
+      if(event.results[i].isFinal)finalText+=event.results[i][0].transcript;
+      else interim+=event.results[i][0].transcript;
+    }
+    const display=finalText+interim;
+    // Update the corresponding textarea
+    if(source==='counseling'){const el=$('counContent');if(el)el.value=display;}
+    else if(source==='homeSchool'){const el=$('hsContent');if(el)el.value=display;}
+  };
+  recognition.onerror=function(e){toast('语音识别出错：'+e.error,'error');stopRecording(source);};
+  recognition.onend=function(){if(isRecording){try{recognition.start();}catch(e){}}};
+  recognition.start();
+  isRecording=true;
+  window._recognition=recognition;
+  window._recSource=source;
+  const btnId=source==='counseling'?'voiceBtn':'hsVoiceBtn';
+  const timeId=source==='counseling'?'recordingTime':'hsRecordingTime';
+  if($(btnId))$(btnId).innerHTML='⏹ 停止录音';if($(btnId))$(btnId).className='btn btn-danger';
+  if($(timeId))$(timeId).style.display='inline';
+  toast('🎙️ 开始录音，请说话...','info');
+}
+function stopRecording(source){
+  if(window._recognition){try{window._recognition.stop();}catch(e){}window._recognition=null;}
+  isRecording=false;
+  const btnId=source==='counseling'?'voiceBtn':'hsVoiceBtn';
+  const timeId=source==='counseling'?'recordingTime':'hsRecordingTime';
+  if($(btnId))$(btnId).innerHTML='🎙️ 开始录音';if($(btnId))$(btnId).className='btn btn-primary';
+  if($(timeId))$(timeId).style.display='none';
+  saveData();
+  toast('✅ 录音结束，内容已自动填充','success');
+}
+
+// ===== BIG SCREEN =====
+function toggleBigScreen(){
+  const overlay=$('bigScreenOverlay');
+  if(overlay.classList.contains('active')){closeBigScreen();return;}
+  overlay.classList.add('active');
+  renderBigScreen();
+}
+function closeBigScreen(){$('bigScreenOverlay').classList.remove('active');}
+function switchBigTab(tab){currentBigTab=tab;renderBigScreen();}
+function renderBigScreen(){
+  const content=$('bigScreenContent');
+  if(currentBigTab==='attendance'){
+    const today=now();const dayData=data.attendance[today]||{};
+    const counts={};Object.values(dayData).forEach(v=>{if(typeof v==='string'&&v.length<=3)counts[v]=(counts[v]||0)+1;});
+    let h='<div class="bs-card"><h2>📋 今日考勤情况 - '+today+'</h2><div style="display:flex;gap:24px;margin:20px 0;flex-wrap:wrap">';
+    h+='<div style="text-align:center"><div class="bs-stat" style="color:#4ade80">'+(counts['出勤']||0)+'</div>出勤</div>';
+    h+='<div style="text-align:center"><div class="bs-stat" style="color:#fbbf24">'+(counts['迟到']||0)+'</div>迟到</div>';
+    h+='<div style="text-align:center"><div class="bs-stat" style="color:#f87171">'+(counts['缺勤']||0)+'</div>缺勤</div>';
+    h+='<div style="text-align:center"><div class="bs-stat" style="color:#60a5fa">'+(counts['请假']||0)+'</div>请假</div></div>';
+    const absent=data.students.filter(s=>dayData[s.id]&&dayData[s.id]!=='出勤');
+    if(absent.length>0)h+='<p>⚠️ 未出勤：'+absent.map(s=>esc(s.name)+'('+esc(dayData[s.id])+')').join('、')+'</p>';
+    h+='</div>';
+    content.innerHTML=h;
+  }else if(currentBigTab==='points'){
+    const totals={};data.points.forEach(p=>{totals[p.studentId]=(totals[p.studentId]||0)+p.value;});
+    const sorted=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+    let h='<div class="bs-card"><h2>⭐ 加减分排行榜 TOP15</h2>';
+    sorted.slice(0,15).forEach(([sid,val],i)=>{
+      h+='<div class="bs-rank-item"><span>'+(i+1)+'. '+esc(getStudentName(sid))+'</span><span style="font-weight:700;color:'+(val>0?'#4ade80':'#f87171')+'">'+(val>0?'+':'')+val+'</span></div>';
+    });
+    h+='</div>';content.innerHTML=h;
+  }else if(currentBigTab==='homework'){
+    const hws=[...(data.homework.assignments||[])].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+    let h='<div class="bs-card"><h2>📖 最近作业</h2>';
+    hws.forEach(hw=>{h+='<div style="padding:12px;margin:8px 0;background:rgba(255,255,255,0.05);border-radius:8px"><strong>'+esc(hw.subject)+'</strong> - '+esc(hw.title)+' <span style="opacity:0.6">('+esc(hw.date)+')</span></div>';});
+    if(hws.length===0)h+='<p>暂无作业</p>';h+='</div>';content.innerHTML=h;
+  }else if(currentBigTab==='honors'){
+    let h='<div class="bs-card"><h2>🏆 班级荣誉</h2>';
+    if(data.honors.class.length===0)h+='<p>暂无班级荣誉</p>';
+    else data.honors.class.forEach(item=>{h+='<div class="bs-rank-item"><span>🏅 '+esc(item.name)+'</span><span>'+esc(item.date)+'</span></div>';});
+    h+='</div>';content.innerHTML=h;
+  }else if(currentBigTab==='seating'){
+    const plan=data.seatingPlans[activeSeatingPlan]||[];
+    const rows=parseInt(localStorage.getItem('seating_rows')||6);
+    const cols=parseInt(localStorage.getItem('seating_cols')||7);
+    let h='<div class="bs-card"><h2>🪑 座位表 - '+esc(activeSeatingPlan)+'</h2>';
+    h+='<div style="display:inline-grid;gap:8px;grid-template-columns:repeat('+cols+',80px);margin:20px auto;text-align:center">';
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        const sid=(plan[r]&&plan[r][c])||null;
+        h+='<div style="padding:8px;background:rgba(255,255,255,0.08);border-radius:6px;font-size:0.85rem;min-height:40px;display:flex;align-items:center;justify-content:center">'+(sid?esc(getStudentName(sid)):'')+'</div>';
+      }
+    }
+    h+='</div></div>';content.innerHTML=h;
+  }else if(currentBigTab==='cleaning'){
+    let h='<div class="bs-card"><h2>🧹 本周卫生安排</h2>';
+    if(!data.cleaning.areas||data.cleaning.areas.length===0)h+='<p>未设置值日区域</p>';
+    else{
+      const wkKey=activeCleaningWeek||Object.keys(data.cleaning.schedule)[0]||'';
+      const week=data.cleaning.schedule[wkKey]||{};
+      h+='<div style="display:flex;gap:24px;flex-wrap:wrap">';
+      data.cleaning.areas.forEach(area=>{
+        h+='<div style="background:rgba(255,255,255,0.05);padding:16px;border-radius:8px;min-width:150px"><h3>'+esc(area)+'</h3>';
+        ['monday','tuesday','wednesday','thursday','friday'].forEach(day=>{
+          const val=week[area+'_'+day]||'';
+          h+='<p>'+esc(day)+'：'+(val?esc(val):'未安排')+'</p>';
+        });
+        h+='</div>';
+      });
+      h+='</div>';
+    }
+    h+='</div>';content.innerHTML=h;
+  }else if(currentBigTab==='committee'){
+    let h='<div class="bs-card"><h2>🏅 班委名单</h2>';
+    if(data.committee.length===0)h+='<p>未设置班委</p>';
+    else data.committee.forEach(c=>{h+='<div class="bs-rank-item"><span>'+esc(c.role)+'</span><span>'+esc(getStudentName(c.studentId))+'</span></div>';});
+    h+='</div>';content.innerHTML=h;
+  }
+}
+
+// ===== HELP =====
+function showHelp(){
+  const m=$('helpContent');
+  let h='<h3>📖 使用说明</h3><div style="max-height:60vh;overflow-y:auto;font-size:0.85rem;line-height:1.8">';
+  h+='<h4>🖥️ 电脑端使用</h4><p>双击"班主任工作台.html"文件即可在浏览器中打开。所有数据自动保存在浏览器本地存储中。</p>';
+  h+='<h4>🌐 永久访问链接（手机/一体机随时打开）</h4>';
+  h+='<p><strong>电脑操作：</strong>双击桌面"班主任工作台.html"文件，浏览器自动打开。<br><strong>手机操作：</strong>打开手机浏览器（推荐Chrome/Edge/Safari），在地址栏输入以下网址：<br><br>';
+  h+='<div style="background:#e8f0fe;padding:10px 14px;border-radius:8px;margin:8px 0;word-break:break-all"><strong>https://213f3f2bcd4e44c4a26bf10beaf9e4fe.sh2.agentos-app.net</strong></div>';
+  h+='<br>输入网址后按回车即可打开工作台，无需同一WiFi，在任何地方都能访问！<br>';
+  h+='⚠️ 注意：每个设备的浏览器数据是独立的（localStorage机制），需要通过"云端同步"来互通数据。<br>';
+  h+='💡 建议把网址<strong>收藏到手机浏览器书签</strong>，以后一键打开。</p>';
+  h+='<p>如需<strong>完全永久</strong>的链接（不受任何第三方服务影响），可部署到 GitHub Pages：<br>1. 在 GitHub 创建仓库<br>2. 将本 HTML 文件重命名为 index.html 并上传<br>3. 在仓库 Settings → Pages 中启用，即可获得 <code>https://你的用户名.github.io/仓库名</code> 的永久地址</p>';
+  h+='<h4>📱 手机端访问</h4><p>方法1（推荐）：直接访问上方云端部署地址</p><p>方法2：电脑端启动HTTP服务：<br><code>python -m http.server 8080</code><br>手机浏览器访问：<code>http://电脑IP:8080/班主任工作台.html</code></p><p>（方法2需电脑和手机在同一WiFi下）</p>';
+  h+='<h4>🖥️ 一体机投屏</h4><p>方法1（推荐）：在一体机浏览器中访问电脑上的HTML文件（启动HTTP服务后访问IP）。<br>方法2：将HTML文件复制到U盘，插入一体机直接打开。<br>打开后点击左下角"大屏投屏模式"按钮即可全屏展示公示内容。</p>';
+  h+='<h4>☁️ 多端同步 — 详细操作步骤（GitHub Gist · 永久有效）</h4>';
+
+  h+='<h5 style="margin-top:12px">第一步：注册 GitHub 账号（已有账号可跳过）</h5>';
+  h+='<p>1. 打开 <a href="https://github.com/signup" target="_blank">github.com/signup</a><br>2. 输入你的邮箱 → 设置密码 → 设置用户名（建议用拼音或英文）<br>3. 完成邮箱验证码确认<br>4. 注册成功后登录即可（完全免费）</p>';
+
+  h+='<h5 style="margin-top:12px">第二步：创建 Personal Access Token（密钥）</h5>';
+  h+='<p><strong>⚠️ 这一步最关键，请仔细操作：</strong><br>';
+  h+='1. 打开 <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a>（如果提示登录，先登录）<br>';
+  h+='2. 点击页面上的 <strong>"Generate new token"</strong> 按钮，选择 <strong>"Generate new token (classic)"</strong><br>';
+  h+='3. 如果提示输入密码，输入你的 GitHub 密码确认<br>';
+  h+='4. 在 <strong>"Note"</strong> 栏填写备注（比如"班主任工作台同步"），方便以后辨认<br>';
+  h+='5. 在 <strong>"Expiration"</strong>（过期时间）一栏，选择 <strong>"No expiration"</strong>（永不过期）<br>';
+  h+='6. 在下方权限列表中，找到 <strong>"gist"</strong> 这一项，<strong>只勾选它前面的复选框</strong>（其他都不需要勾）<br>';
+  h+='7. 滚动到页面最底部，点击绿色按钮 <strong>"Generate token"</strong><br>';
+  h+='8. ⚠️ 页面会显示一串以 <strong>ghp_</strong> 开头的字母和数字，这就是你的 Token<br>';
+  h+='9. <strong style="color:red">立刻复制这串 Token！</strong>关闭页面后就再也看不到了（如果丢了只能重新创建）</p>';
+
+  h+='<h5 style="margin-top:12px">第三步：在工作台中粘贴 Token 并推送数据</h5>';
+  h+='<p>1. 打开班主任工作台<br>2. 点击左侧导航栏的 <strong>"☁️ 云端同步设置"</strong> 按钮<br>3. 在 <strong>"GitHub Token"</strong> 输入框中，粘贴刚才复制的 Token（ghp_开头的那串）<br>4. <strong>"Gist ID"</strong> 那一栏先不用管，保持空白<br>5. 点击 <strong>"📤 推送到云端"</strong> 按钮<br>6. 等待几秒，看到提示"已推送到云端 ✅"即为成功<br>7. 此时 <strong>"Gist ID"</strong> 栏会自动填上一串字符 — 这是你的数据在云端的"门牌号"，记下来<br>8. 点击 <strong>"保存设置"</strong>，完成！</p>';
+
+  h+='<h5 style="margin-top:12px">第四步：在其他设备上同步数据</h5>';
+  h+='<p>以手机为例：<br>1. 用手机浏览器打开工作台（访问云端部署地址）<br>2. 点击左侧菜单 <strong>"☁️ 云端同步设置"</strong><br>3. 在 <strong>"GitHub Token"</strong> 栏粘贴同样的 Token<br>4. 在 <strong>"Gist ID"</strong> 栏粘贴电脑上生成的 Gist ID<br>5. 点击 <strong>"📥 从云端拉取"</strong><br>6. 看到提示"已从云端同步最新数据"即为成功<br>7. 点击"保存设置"<br><br>之后电脑和手机的数据就实时同步了！电脑改了什么，手机拉取一下就能看到；手机上录的内容，电脑拉取一下也能看到。<br>可以勾选 <strong>"启用自动同步"</strong> 让工作台每 60 秒自动拉取一次最新数据。</p>';
+
+  h+='<h5 style="margin-top:12px">📋 快速操作速查表</h5>';
+  h+='<table style="width:100%;font-size:0.8rem"><thead><tr><th>场景</th><th>操作</th></tr></thead><tbody>';
+  h+='<tr><td>电脑改了数据 → 同步到手机</td><td>电脑点"推送到云端" → 手机点"从云端拉取"</td></tr>';
+  h+='<tr><td>手机录了语音 → 同步到电脑</td><td>手机点"推送到云端" → 电脑点"从云端拉取"</td></tr>';
+  h+='<tr><td>想让工作台自动同步</td><td>勾选"启用自动同步"，每60秒自动检查</td></tr>';
+  h+='<tr><td>换了新手机/新电脑</td><td>粘贴 Token + Gist ID → "从云端拉取"</td></tr>';
+  h+='<tr><td>Token 丢了/忘记了</td><td>重新去 GitHub 创建新的 Token → 更新设置</td></tr>';
+  h+='<tr><td>清空云端数据重来</td><td>点"删除云端数据" → 重新推送</td></tr>';
+  h+='<tr><td>不用云端了，手动同步</td><td>侧边栏"导出备份"→ 文件传到另一设备 → "导入备份"</td></tr>';
+  h+='</tbody></table>';
+  h+='<p style="margin-top:8px;color:var(--text-secondary)">💡 小提示：GitHub Token 就像一把钥匙，不要分享给不信任的人。数据存在你的 GitHub 账号下，完全由你掌控。</p>';
+  h+='<h4>🎤 录音功能</h4><p>在谈心谈话或家校沟通模块中，点击"开始录音"按钮即可开始语音转文字。需要Chrome浏览器支持。录音结束后文字自动填充到对应文本框。</p>';
+  h+='<h4>🪑 排座位功能</h4><p>1. 在排班页面设置行列数<br>2. 点击空座位选择学生<br>3. 拖拽已安排的座位到新位置<br>4. 点击"智能排座"自动分配<br>5. 添加固定座位/不能同坐规则<br>6. 保存多套座位方案</p>';
+  h+='<h4>📖 作业等级评定</h4><p>在作业管理模块，点击"评定等级"按钮，每个学生旁有下拉框，直接选择A+/A/B+/B/C即可。</p>';
+  h+='<h4>📊 成绩分析</h4><p>录入至少两次考试成绩后，点击"成绩分析"按钮，选择考试和科目，即可看到班级平均分变化趋势、波动学生名单、进步榜和退步预警。</p>';
+  h+='<h4>📄 生成述职文稿</h4><p>在"自身提升与述职"→"生成述职文稿"，选择要包含的模块，点击生成。生成的文稿可以编辑后复制或下载为Word文件(.doc)。</p>';
+  h+='<h4>🧠 AI工具使用</h4><p>班主任锦囊模块内置：常见问题知识库（点击即可查看解答）、AI问答（输入问题获取建议）、话术生成（选择场景自动生成沟通话术）。也可通过快捷链接跳转到外部AI平台。</p>';
+    h+='<h4>🖥️ 电脑端使用</h4><p>双击桌面"班主任工作台.html"文件即可在浏览器中打开。工作台会自动从云端恢复数据（如果配置了同步），关闭再打开数据不丢失。</p>';
+  h+='<h4>🌐 永久访问网址（手机/一体机用这个）</h4>';
+  h+='<p>以下网址<strong>永久有效</strong>，任何设备浏览器输入即可打开：<br><br>';
+  h+='<div style="background:#e8f0fe;padding:12px 14px;border-radius:8px;margin:8px 0;word-break:break-all"><strong style="font-size:1rem">https://你的用户名.github.io/banshujian/</strong></div>';
+  h+='（部署后获得，详见下方"部署永久网址"章节）<br>';
+  h+='💡 建议<strong>收藏到手机浏览器书签</strong>，以后一键打开。</p>';
+
+  h+='<h4>🚀 部署永久网址（GitHub Pages · 一次部署，永久有效）</h4>';
+  h+='<h5 style="margin-top:10px">第1步：注册 GitHub 账号（免费，3分钟）</h5>';
+  h+='<p>1. 打开 <a href="https://github.com/signup" target="_blank">github.com/signup</a><br>2. 输入邮箱 → 设置密码 → 设置用户名（建议拼音，如 zhanglaoshi）→ 点"Continue"<br>3. 收到验证邮件后点击确认链接<br>4. 注册完成！完全免费</p>';
+  h+='<h5 style="margin-top:10px">第2步：创建仓库</h5>';
+  h+='<p>1. 登录 GitHub，点击右上角 <strong>"+"</strong> → <strong>"New repository"</strong><br>2. Repository name 填：<strong>banshujian</strong><br>3. 选择 <strong>Public</strong>（公开）<br>4. 其他都默认，点底部绿色 <strong>"Create repository"</strong></p>';
+  h+='<h5 style="margin-top:10px">第3步：上传文件</h5>';
+  h+='<p>1. 在仓库页面找到 <strong>"uploading an existing file"</strong> 链接，点击<br>2. 把桌面的"班主任工作台.html"文件<strong>拖拽</strong>到页面上<br>3. <strong>重要</strong>：上传前先把文件名改为 <strong>index.html</strong><br>4. 拖到页面中间虚线框里，等上传完成<br>5. 页面底部点绿色 <strong>"Commit changes"</strong> 按钮</p>';
+  h+='<h5 style="margin-top:10px">第4步：启用 Pages（关键一步！）</h5>';
+  h+='<p>1. 上传完后，点击仓库顶部的 <strong>"Settings"</strong> 标签<br>2. 左侧菜单找到 <strong>"Pages"</strong>（在"Code and automation"分类下）<br>3. Branch 下拉框选 <strong>"main"</strong>，右边选 <strong>"/ (root)"</strong>，点 <strong>"Save"</strong><br>4. 等待约1分钟，页面刷新后会显示：<strong>"Your site is live at https://你的用户名.github.io/banshujian/"</strong><br>5. 🎉 这个网址就是你的<strong>永久地址</strong>，永远有效</p>';
+
+  h+='<h4>☁️ 数据同步设置（重要！保证手机/电脑数据互通）</h4>';
+  h+='<p style="background:#fff3cd;padding:8px;border-radius:6px;margin:8px 0">⚠️ <strong>关键提醒</strong>：工作台部署到网址后，手机和电脑打开的虽然是同一个网页，但数据存在各自浏览器里。需要通过下面的"云端同步"功能才能互通数据。每次打开页面都会自动从云端恢复最新数据。</p>';
+  h+='<h5 style="margin-top:10px">第1步：创建 GitHub Token（密钥，只需一次）</h5>';
+  h+='<p>1. 打开 <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a><br>2. 点 <strong>"Generate new token"</strong> → <strong>"Generate new token (classic)"</strong><br>3. Note 填：班主任工作台<br>4. Expiration 选：<strong>No expiration</strong>（永不过期）<br>5. 权限只勾 <strong>gist</strong> 一项<br>6. 点底部 <strong>"Generate token"</strong><br>7. <strong style="color:red">立刻复制显示的 Token（ghp_开头）！关了就再也看不到了</strong></p>';
+  h+='<h5 style="margin-top:10px">第2步：在电脑上推送数据</h5>';
+  h+='<p>1. 打开工作台 → 左侧"☁️ 云端同步设置"<br>2. 粘贴 Token → Gist ID 空着 → 点"📤 推送到云端"<br>3. Gist ID 自动生成，记下来 → 点"保存设置"<br>4. 勾选"启用自动同步"</p>';
+  h+='<h5 style="margin-top:10px">第3步：在手机上拉取数据</h5>';
+  h+='<p>1. 手机浏览器打开你的永久网址 → "☁️ 云端同步设置"<br>2. 粘贴 Token + Gist ID → 点"📥 从云端拉取"<br>3. 点"保存设置"，勾选"自动同步"<br>4. ✅ 搞定！之后每60秒自动同步一次</p>';
+  h+='<h5 style="margin-top:10px">🛡️ 数据安全保障</h5>';
+  h+='<p>• 每次打开页面前会自动从云端检查最新数据<br>• 即使清空浏览器缓存，重新配置Token后也能一键恢复全部数据<br>• 数据存三处：电脑localStorage + 手机localStorage + GitHub云端<br>• 建议每周导出一次JSON备份（侧边栏"导出备份"），多一层保险<br>• GitHub Gist 永久有效，数据不会过期</p>';
+
+  h+='<h5 style="margin-top:12px">📋 日常操作速查表</h5>';
+  h+='<table style="width:100%;font-size:0.8rem"><thead><tr><th>场景</th><th>操作</th></tr></thead><tbody>';
+  h+='<tr><td>电脑改了数据 → 手机看</td><td>电脑点"推送到云端" → 手机打开页面自动拉取</td></tr>';
+  h+='<tr><td>手机录了语音 → 电脑看</td><td>手机点"推送到云端" → 电脑打开页面自动拉取</td></tr>';
+  h+='<tr><td>换新设备（数据全丢了）</td><td>粘贴Token + GistID → "从云端拉取" → 全部数据恢复</td></tr>';
+  h+='<tr><td>清浏览器缓存后</td><td>重新配置Token → 自动从云端恢复（无需手动操作）</td></tr>';
+  h+='<tr><td>手动备份</td><td>侧边栏"导出备份"下载JSON → 安全保存</td></tr>';
+  h+='<tr><td>想修改网页内容</td><td>修改桌面HTML → 重新上传到GitHub仓库 → 网址自动更新</td></tr>';
+  h+='<tr><td>Token丢了/忘了</td><td>重新去GitHub创建 → 更新即可（云端数据还在）</td></tr></tbody></table>';
+// ===== INIT =====
+let autoSyncEnabled=false;
+function init(){
+  loadSyncConfig();
+  loadData();
+  $('classNameDisplay').textContent=data.classInfo.className||'未设置班级';
+  buildSidebar();
+  renderHome();
+  // Auto-recover from cloud on page load (survives cache clearing & new devices!)
+  if(githubToken && gistId){
+    $('syncStatus').innerHTML='☁️ 检查云端数据...';
+    $('syncStatus').className='sync-status syncing';
+    pullFromCloud().then(() => {
+      if(autoSyncEnabled){startAutoSync();}
+    }).catch(()=>{
+      $('syncStatus').innerHTML='⚠️ 云端连接失败';
+      $('syncStatus').className='sync-status error';
+    });
+  }else if(!githubToken && !gistId){
+    $('syncStatus').innerHTML='💻 本地存储';
+    $('syncStatus').className='sync-status synced';
+  }
+  // Close mobile nav on outside click
+  document.addEventListener('click',function(e){
+    if(window.innerWidth<768&&!e.target.closest('#sidebar')&&!e.target.closest('#mobileNavToggle')){
+      $('sidebar').classList.remove('mobile-open');
+    }
+  });
+}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
