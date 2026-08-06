@@ -1982,7 +1982,7 @@ function showHelp(){
     h+='<h4>🖥️ 电脑端使用</h4><p>双击桌面"班主任工作台.html"文件即可在浏览器中打开。工作台会自动从云端恢复数据（如果配置了同步），关闭再打开数据不丢失。</p>';
   h+='<h4>🌐 永久访问网址（手机/一体机用这个）</h4>';
   h+='<p>以下网址<strong>永久有效</strong>，任何设备浏览器输入即可打开：<br><br>';
-  h+='<div style="background:#e8f0fe;padding:12px 14px;border-radius:8px;margin:8px 0;word-break:break-all"><strong style="font-size:1rem">https://你的用户名.github.io/banshujian/</strong></div>';
+  h+='<div style="background:#e8f0fe;padding:12px 14px;border-radius:8px;margin:8px 0;word-break:break-all"><strong style="font-size:1rem">https://xxh-1225.github.io/banshujian/</strong></div>';
   h+='（部署后获得，详见下方"部署永久网址"章节）<br>';
   h+='💡 建议<strong>收藏到手机浏览器书签</strong>，以后一键打开。</p>';
 
@@ -1994,7 +1994,7 @@ function showHelp(){
   h+='<h5 style="margin-top:10px">第3步：上传文件</h5>';
   h+='<p>1. 在仓库页面找到 <strong>"uploading an existing file"</strong> 链接，点击<br>2. 把桌面的"班主任工作台.html"文件<strong>拖拽</strong>到页面上<br>3. <strong>重要</strong>：上传前先把文件名改为 <strong>index.html</strong><br>4. 拖到页面中间虚线框里，等上传完成<br>5. 页面底部点绿色 <strong>"Commit changes"</strong> 按钮</p>';
   h+='<h5 style="margin-top:10px">第4步：启用 Pages（关键一步！）</h5>';
-  h+='<p>1. 上传完后，点击仓库顶部的 <strong>"Settings"</strong> 标签<br>2. 左侧菜单找到 <strong>"Pages"</strong>（在"Code and automation"分类下）<br>3. Branch 下拉框选 <strong>"main"</strong>，右边选 <strong>"/ (root)"</strong>，点 <strong>"Save"</strong><br>4. 等待约1分钟，页面刷新后会显示：<strong>"Your site is live at https://你的用户名.github.io/banshujian/"</strong><br>5. 🎉 这个网址就是你的<strong>永久地址</strong>，永远有效</p>';
+  h+='<p>1. 上传完后，点击仓库顶部的 <strong>"Settings"</strong> 标签<br>2. 左侧菜单找到 <strong>"Pages"</strong>（在"Code and automation"分类下）<br>3. Branch 下拉框选 <strong>"main"</strong>，右边选 <strong>"/ (root)"</strong>，点 <strong>"Save"</strong><br>4. 等待约1分钟，页面刷新后会显示：<strong>"Your site is live at https://xxh-1225.github.io/banshujian/"</strong><br>5. 🎉 这个网址就是你的<strong>永久地址</strong>，永远有效</p>';
 
   h+='<h4>☁️ 数据同步设置（重要！保证手机/电脑数据互通）</h4>';
   h+='<p style="background:#fff3cd;padding:8px;border-radius:6px;margin:8px 0">⚠️ <strong>关键提醒</strong>：工作台部署到网址后，手机和电脑打开的虽然是同一个网页，但数据存在各自浏览器里。需要通过下面的"云端同步"功能才能互通数据。每次打开页面都会自动从云端恢复最新数据。</p>';
@@ -2016,6 +2016,10 @@ function showHelp(){
   h+='<tr><td>手动备份</td><td>侧边栏"导出备份"下载JSON → 安全保存</td></tr>';
   h+='<tr><td>想修改网页内容</td><td>修改桌面HTML → 重新上传到GitHub仓库 → 网址自动更新</td></tr>';
   h+='<tr><td>Token丢了/忘了</td><td>重新去GitHub创建 → 更新即可（云端数据还在）</td></tr></tbody></table>';
+  h+='</div>';
+  m.innerHTML=h;
+  $('helpOverlay').classList.add('active');
+}
 // ===== INIT =====
 let autoSyncEnabled=false;
 function init(){
